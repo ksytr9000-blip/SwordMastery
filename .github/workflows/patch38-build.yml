@@ -1,0 +1,150 @@
+name: Build SwordMastery PATCH38 FIX01
+
+on:
+  push:
+    branches:
+      - build/patch38-fix01-cjk-label
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unpack full source and apply scoped CJK fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p buildsrc
+          unzip -q SwordMastery_PATCH_36_SCOPED_CJK_GMCM_SOURCE.zip -d buildsrc
+          cp GmcmCjkLabelPatch.cs buildsrc/SwordMastery/
+          cd buildsrc/SwordMastery
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p=Path("CjkTextService.cs")
+          s=p.read_text(encoding="utf-8")
+          old="""if (c is >= '\\u2E80' and <= '\\u9FFF' or >= '\\uAC00' and <= '\\uD7AF'
+                          or >= '\\uF900' and <= '\\uFAFF' or >= '\\uFF66' and <= '\\uFF9D')"""
+          new="""if (c is >= '\\u2E80' and <= '\\u9FFF'
+                          or >= '\\uAC00' and <= '\\uD7AF'
+                          or >= '\\uF900' and <= '\\uFAFF'
+                          or >= '\\uFF01' and <= '\\uFFEF')"""
+          assert s.count(old)==1, "PATCH37 base CJK range mismatch"
+          p.write_text(s.replace(old,new),encoding="utf-8")
+
+          p=Path("I18n.cs")
+          s=p.read_text(encoding="utf-8")
+          start=s.index("    public static bool IsOwnedText(string? text)")
+          end=s.index("    private static string TrackModText(string text)",start)
+          rewrite="""    /// <summary>Use GMCM's own current menu: title-screen child menus may not
+              /// be Game1.activeClickableMenu.</summary>
+              public static bool IsOwnGmcmPageActive()
+              {
+                  try { return IsOwnGmcmPage?.Invoke() == true; }
+                  catch { return false; }
+              }
+
+              public static bool IsOwnedText(string? text)
+              {
+                  if (string.IsNullOrEmpty(text) || !NeedsIndependentCjkFont)
+                      return false;
+                  if (IsOwnGmcmPageActive())
+                      return OwnedText.TryGetValue(text, out _)
+                          || AllModCjkText.Contains(text)
+                          || IsDerivedGmcmText(text);
+                  if (InGmcmMenu)
+                      return false;
+                  return OwnedText.TryGetValue(text, out _) || NativeDataText.Contains(text);
+              }
+
+              // GMCM may copy/wrap/split text, losing its original string identity.
+              // Only compare fragments on Sword Mastery's own configuration page.
+              private static bool IsDerivedGmcmText(string text)
+              {
+                  string normalized = text.Replace("\\r", "", StringComparison.Ordinal)
+                      .Replace("\\n", "", StringComparison.Ordinal).Trim();
+                  if (normalized.Length < 2)
+                      return false;
+                  int cjkCount = 0;
+                  foreach (char c in normalized)
+                      if (c is >= '\\u2E80' and <= '\\u9FFF'
+                          or >= '\\uAC00' and <= '\\uD7AF'
+                          or >= '\\uF900' and <= '\\uFAFF'
+                          or >= '\\uFF01' and <= '\\uFFEF')
+                          cjkCount++;
+                  if (cjkCount < 2) return false;
+                  foreach (string candidate in AllModCjkText)
+                  {
+                      if (candidate.Contains(normalized, StringComparison.Ordinal))
+                          return true;
+                      if (normalized.Length > 2 &&
+                          candidate.Contains(normalized.Replace(" ", "", StringComparison.Ordinal),
+                              StringComparison.Ordinal))
+                          return true;
+                  }
+                  return false;
+              }
+
+          """
+          s=s[:start]+rewrite+s[end:]
+          p.write_text(s,encoding="utf-8")
+
+          p=Path("ModEntry.cs")
+          s=p.read_text(encoding="utf-8")
+          marker="""        gmcm.Register(
+                      mod: ModManifest,"""
+          assert s.count(marker)==1, "GMCM registration marker mismatch"
+          s=s.replace(marker,"""        // Scoped label renderer fixes Simplified Chinese without global font changes.
+                  GmcmCjkLabelPatch.Install(Monitor);
+
+          """+marker)
+          p.write_text(s,encoding="utf-8")
+
+          import json
+          dictionaries={lang:json.loads((Path("i18n")/(lang+".json")).read_text(encoding="utf-8"))
+                        for lang in ("default","ko","ja","zh")}
+          assert all(set(d)==set(dictionaries["default"]) for d in dictionaries.values())
+          for atlas in ("ui_small","ui_heading"):
+              glyphs=set(json.loads((Path("assets/ui")/(atlas+".json")).read_text(encoding="utf-8"))["glyphs"])
+              for lang in ("ja","zh"):
+                  required={c for c in "".join(dictionaries[lang].values()) if ord(c)>31}
+                  assert not(required-glyphs),f"{atlas}/{lang}: {required-glyphs}"
+          print("PATCH38 applied: GMCM own page + bold/regular label renderer; 4 languages checked.")
+          PY
+
+      - name: Add SMAPI build environment
+        uses: Pathoschild/SMAPI-ModBuildWorkflow/add-build-environment@v1
+        with:
+          dotnet_version: 6.0.x
+          force_build_with_dotnet_version: true
+
+      - name: Restore
+        working-directory: buildsrc/SwordMastery
+        run: dotnet restore SwordMastery.csproj
+
+      - name: Compile
+        working-directory: buildsrc/SwordMastery
+        run: dotnet build SwordMastery.csproj -c Release --no-restore
+
+      - name: Create install archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd buildsrc/SwordMastery
+          test -s bin/Release/net6.0/SwordMastery.dll
+          mkdir -p package/SwordMastery
+          cp bin/Release/net6.0/SwordMastery.dll manifest.json package/SwordMastery/
+          cp -r assets i18n package/SwordMastery/
+          cp README_USER.txt package/SwordMastery/
+          echo 'PATCH38 FIX01: scoped GMCM label glyph correction; in-game validation needed.' > package/SwordMastery/PATCH38_README.txt
+          (cd package && zip -qr ../../../SwordMastery_PATCH_38_FIX01_INSTALL.zip SwordMastery)
+          unzip -t ../../SwordMastery_PATCH_38_FIX01_INSTALL.zip
+
+      - name: Upload installable ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwordMastery-PATCH38-FIX01-INSTALL
+          path: SwordMastery_PATCH_38_FIX01_INSTALL.zip
+          if-no-files-found: error
