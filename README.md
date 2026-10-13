@@ -1,1 +1,3 @@
-Sword Mastery PATCH39 cumulative validation branch. Changes: native OnStoneDestroyed ore drops and stair rolls; vanilla sword swings for Step, Calico, Issen; PATCH38 scoped CJK fixes retained. main unchanged.
+# PATCH39 FIX01 verification
+
+Complete cumulative source in ZIP. Basic B (Slash) now uses the vanilla sword-swipe animation, while its combat logic, PATCH39 mining rewards, and PATCH38 language behavior remain unchanged.
