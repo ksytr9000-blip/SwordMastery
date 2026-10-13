@@ -1,3 +1,3 @@
-# SwordMastery PATCH32 build validation
+# SwordMastery PATCH32 FIX01 CI
 
-Build-only branch. The committed ZIP contains the complete PATCH32 source. GitHub Actions extracts it, builds, and uploads a test package. The public default branch is unchanged.
+Compiled test only, not released. This branch contains the cumulative source zip and GitHub Actions workflow; public main unaffected.

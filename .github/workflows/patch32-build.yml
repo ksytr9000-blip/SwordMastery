@@ -1,4 +1,4 @@
-name: Build SwordMastery PATCH32 (test)
+name: Build SwordMastery PATCH32 FIX01 (test)
 on:
   push:
     branches:
@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Extract PATCH32 sources
-        run: unzip -q SwordMastery_PATCH_32_CUSTOM_POSES_4LANG_CUMULATIVE_SOURCE.zip -d source
+        run: unzip -q SwordMastery_PATCH_32_FIX01_CUSTOM_POSES_4LANG_CUMULATIVE_SOURCE.zip -d source
 
       - name: Install Stardew SMAPI build environment
         uses: Pathoschild/SMAPI-ModBuildWorkflow/add-build-environment@v1
