@@ -1,8 +1,8 @@
-name: Build SwordMastery PATCH34 Native Farmer CJK (test)
+name: Build SwordMastery PATCH35 CJK Localization (test)
 on:
   push:
     branches:
-      - build/patch32-validation
+      - build/patch35-cjk-localization
   workflow_dispatch:
 
 permissions:
@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Extract PATCH34 sources
-        run: unzip -q SwordMastery_PATCH_34_NATIVE_FARMER_DASH_CJK_CUMULATIVE_SOURCE.zip -d source
+        run: unzip -q SwordMastery_PATCH_35_CJK_FULL_NATIVE_UI_CUMULATIVE_SOURCE.zip -d source
 
       - name: Install Stardew SMAPI build environment
         uses: Pathoschild/SMAPI-ModBuildWorkflow/add-build-environment@v1
@@ -40,11 +40,11 @@ jobs:
           cp -r source/SwordMastery/assets out/SwordMastery/
           cp -r source/SwordMastery/i18n out/SwordMastery/
           cp source/SwordMastery/README_USER.txt out/SwordMastery/
-          cd out && zip -qr ../SwordMastery_PATCH34_TEST_NEXUS_VORTEX.zip SwordMastery
+          cd out && zip -qr ../SwordMastery_PATCH35_CJK_TEST_NEXUS_VORTEX.zip SwordMastery
 
       - name: Upload compiled test package
         uses: actions/upload-artifact@v4
         with:
-          name: SwordMastery_PATCH34_TEST_NEXUS_VORTEX
-          path: SwordMastery_PATCH34_TEST_NEXUS_VORTEX.zip
+          name: SwordMastery_PATCH35_CJK_TEST_NEXUS_VORTEX
+          path: SwordMastery_PATCH35_CJK_TEST_NEXUS_VORTEX.zip
           if-no-files-found: error
