@@ -1,3 +1,1 @@
-# Sword Mastery PATCH35 localization test
-
-Independent test branch. PATCH35 cumulative source is in the ZIP. Actions builds an installable package. Main branch is unchanged.
+PATCH36 Scoped CJK build validation. Only SwordMastery i18n strings get JA/ZH glyph support; GMCM global UI is unaffected. Test branch; main unchanged.
