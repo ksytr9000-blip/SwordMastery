@@ -1,0 +1,50 @@
+name: Build SwordMastery PATCH32 (test)
+on:
+  push:
+    branches:
+      - build/patch32-validation
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract PATCH32 sources
+        run: unzip -q SwordMastery_PATCH_32_CUSTOM_POSES_4LANG_CUMULATIVE_SOURCE.zip -d source
+
+      - name: Install Stardew SMAPI build environment
+        uses: Pathoschild/SMAPI-ModBuildWorkflow/add-build-environment@v1
+        with:
+          dotnet_version: 6.0.x
+          force_build_with_dotnet_version: true
+
+      - name: Restore
+        run: dotnet restore source/SwordMastery/SwordMastery.csproj
+
+      - name: Build
+        run: dotnet build source/SwordMastery/SwordMastery.csproj --configuration Release --no-restore
+
+      - name: Package test build
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p out/SwordMastery
+          cp source/SwordMastery/bin/Release/net6.0/SwordMastery.dll out/SwordMastery/
+          cp source/SwordMastery/manifest.json out/SwordMastery/
+          cp -r source/SwordMastery/assets out/SwordMastery/
+          cp -r source/SwordMastery/i18n out/SwordMastery/
+          cp source/SwordMastery/README_USER.txt out/SwordMastery/
+          cd out && zip -qr ../SwordMastery_PATCH32_TEST_NEXUS_VORTEX.zip SwordMastery
+
+      - name: Upload compiled test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwordMastery_PATCH32_TEST_NEXUS_VORTEX
+          path: SwordMastery_PATCH32_TEST_NEXUS_VORTEX.zip
+          if-no-files-found: error
