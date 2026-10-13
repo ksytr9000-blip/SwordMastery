@@ -1,0 +1,41 @@
+name: SwordMastery PATCH39 Mining Drops and Vanilla Swings
+on:
+  push:
+    branches: [build/patch39-mining-rewards-vanilla-swings]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack cumulative PATCH39 source
+        run: unzip -q SwordMastery_PATCH_39_MINING_DROPS_VANILLA_SWINGS_SOURCE.zip -d src
+      - name: Install SMAPI build environment
+        uses: Pathoschild/SMAPI-ModBuildWorkflow/add-build-environment@v1
+        with:
+          dotnet_version: 6.0.x
+          force_build_with_dotnet_version: true
+      - name: Restore
+        run: dotnet restore src/SwordMastery/SwordMastery.csproj
+      - name: Compile
+        run: dotnet build src/SwordMastery/SwordMastery.csproj -c Release --no-restore
+      - name: Package installable mod
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out/SwordMastery
+          cp src/SwordMastery/bin/Release/net6.0/SwordMastery.dll out/SwordMastery/
+          cp src/SwordMastery/manifest.json out/SwordMastery/
+          cp -r src/SwordMastery/assets out/SwordMastery/
+          cp -r src/SwordMastery/i18n out/SwordMastery/
+          cp src/SwordMastery/README_USER.txt out/SwordMastery/
+          cp src/SwordMastery/README_PATCH_39.txt out/SwordMastery/
+          (cd out && zip -qr ../SwordMastery_PATCH39_TEST_INSTALL.zip SwordMastery)
+          unzip -t SwordMastery_PATCH39_TEST_INSTALL.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SwordMastery-PATCH39-TEST-INSTALL
+          path: SwordMastery_PATCH39_TEST_INSTALL.zip
+          if-no-files-found: error

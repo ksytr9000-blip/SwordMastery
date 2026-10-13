@@ -1,1 +1,1 @@
-PATCH36 Scoped CJK build validation. Only SwordMastery i18n strings get JA/ZH glyph support; GMCM global UI is unaffected. Test branch; main unchanged.
+Sword Mastery PATCH39 cumulative validation branch. Changes: native OnStoneDestroyed ore drops and stair rolls; vanilla sword swings for Step, Calico, Issen; PATCH38 scoped CJK fixes retained. main unchanged.
