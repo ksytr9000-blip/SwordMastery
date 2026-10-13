@@ -1,8 +1,8 @@
-name: Build SwordMastery PATCH32 FIX01 (test)
+name: Build SwordMastery PATCH32 FIX02 (motion asset repair)
 on:
   push:
     branches:
-      - build/patch32-validation
+      - build/patch32-fix02-motion-assets
   workflow_dispatch:
 
 permissions:
@@ -15,8 +15,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Extract PATCH32 sources
+      - name: Extract cumulative PATCH32 FIX01 source
+        shell: bash
         run: unzip -q SwordMastery_PATCH_32_FIX01_CUSTOM_POSES_4LANG_CUMULATIVE_SOURCE.zip -d source
+
+      - name: Inspect and repair motion resource locations
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from shutil import copy2
+          root = Path('source/SwordMastery')
+          assert root.joinpath('SwordMastery.csproj').is_file(), 'Expected SwordMastery source root missing'
+          dest = root/'assets'/'motions'
+          dest.mkdir(parents=True,exist_ok=True)
+          print('All motion assets found in source:')
+          for p in sorted(root.rglob('*pose*.png')):
+              print(' ',p, p.stat().st_size)
+          for name in ('pose_arm.png','pose_blade.png'):
+              target=dest/name
+              if not target.is_file() or target.stat().st_size < 20:
+                  matches=[p for p in root.rglob(name) if p.is_file() and p != target and p.stat().st_size >= 20]
+                  if not matches:
+                      raise RuntimeError(f'MISSING REQUIRED MOTION TEXTURE: {target} (not found anywhere in source archive)')
+                  copy2(matches[0],target)
+                  print('RELOCATED:',matches[0],'=>',target)
+              assert target.read_bytes()[:8] == b'\x89PNG\r\n\x1a\n', f'Invalid PNG header: {target}'
+              print('VERIFIED:',target,target.stat().st_size,'bytes')
+          PY
 
       - name: Install Stardew SMAPI build environment
         uses: Pathoschild/SMAPI-ModBuildWorkflow/add-build-environment@v1
@@ -27,24 +54,55 @@ jobs:
       - name: Restore
         run: dotnet restore source/SwordMastery/SwordMastery.csproj
 
-      - name: Build
+      - name: Compile DLL
         run: dotnet build source/SwordMastery/SwordMastery.csproj --configuration Release --no-restore
 
-      - name: Package test build
+      - name: Package and verify installable ZIP
         shell: bash
         run: |
-          set -euxo pipefail
+          set -euo pipefail
+          rm -rf out
           mkdir -p out/SwordMastery
           cp source/SwordMastery/bin/Release/net6.0/SwordMastery.dll out/SwordMastery/
           cp source/SwordMastery/manifest.json out/SwordMastery/
           cp -r source/SwordMastery/assets out/SwordMastery/
           cp -r source/SwordMastery/i18n out/SwordMastery/
           cp source/SwordMastery/README_USER.txt out/SwordMastery/
-          cd out && zip -qr ../SwordMastery_PATCH32_TEST_NEXUS_VORTEX.zip SwordMastery
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,zipfile
+          root=Path('out/SwordMastery')
+          assert (root/'SwordMastery.dll').stat().st_size > 0
+          for name in ('pose_arm.png','pose_blade.png'):
+              p=root/'assets'/'motions'/name
+              assert p.is_file() and p.stat().st_size >= 20, f'Install package missing {p}'
+              assert p.read_bytes()[:8]==b'\x89PNG\r\n\x1a\n'
+          for f in ('default.json','ko.json','ja.json','zh.json'):
+              p=root/'i18n'/f
+              if not p.is_file(): print('INFO: different localization filename:',f)
+          print('Complete installer file tree:')
+          for p in sorted(root.rglob('*')):
+              if p.is_file(): print(' ',p.relative_to(root),p.stat().st_size)
+          PY
+          (cd out && zip -qr ../SwordMastery_PATCH32_FIX02_NEXUS_INSTALL.zip SwordMastery)
+          unzip -t SwordMastery_PATCH32_FIX02_NEXUS_INSTALL.zip
+          python3 - <<'PY'
+          import zipfile
+          p='SwordMastery_PATCH32_FIX02_NEXUS_INSTALL.zip'
+          with zipfile.ZipFile(p) as z:
+              required=['SwordMastery/SwordMastery.dll','SwordMastery/manifest.json',
+                        'SwordMastery/assets/motions/pose_arm.png',
+                        'SwordMastery/assets/motions/pose_blade.png']
+              missing=[x for x in required if x not in z.namelist()]
+              assert not missing, f'Missing installed paths: {missing}'
+              for name in required[2:]:
+                  assert z.read(name)[:8]==b'\x89PNG\r\n\x1a\n',f'Invalid PNG: {name}'
+              print('PASS: compiled DLL and both exact SMAPI motion asset paths present inside FINAL INSTALLER ZIP')
+          PY
 
-      - name: Upload compiled test package
+      - name: Upload verified player installer
         uses: actions/upload-artifact@v4
         with:
-          name: SwordMastery_PATCH32_TEST_NEXUS_VORTEX
-          path: SwordMastery_PATCH32_TEST_NEXUS_VORTEX.zip
+          name: SwordMastery_PATCH32_FIX02_NEXUS_INSTALL
+          path: SwordMastery_PATCH32_FIX02_NEXUS_INSTALL.zip
           if-no-files-found: error
