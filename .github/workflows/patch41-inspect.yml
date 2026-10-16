@@ -1,7 +1,5 @@
 name: PATCH41 inspect runtime code
 on:
-  push:
-    branches: [build/patch41-sword-gate-footwork-cost]
   workflow_dispatch:
 permissions:
   contents: read
