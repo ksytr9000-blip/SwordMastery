@@ -1,7 +1,7 @@
-name: Sword Mastery PATCH41 Weapon Scaling + Passive Energy
+name: Sword Mastery PATCH41 FIX01 Apex 25 Percent Reserve
 on:
   push:
-    branches: [build/patch41-weapon-scaling-passives]
+    branches: [build/patch41-fix01-apex-25-percent]
   workflow_dispatch:
 permissions:
   contents: read
@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Extract complete cumulative PATCH41 source
-        run: unzip -q SwordMastery_PATCH_41_TOWER_ALL_WEAPONS_PASSIVE_1PCT_SOURCE.zip -d src
+        run: unzip -q SwordMastery_PATCH_41_FIX01_TOWER_SCALING_PASSIVES_APEX25_SOURCE.zip -d src
       - name: Install Stardew SMAPI build environment
         uses: Pathoschild/SMAPI-ModBuildWorkflow/add-build-environment@v1
         with:
@@ -31,11 +31,11 @@ jobs:
           cp -r src/SwordMastery/assets out/SwordMastery/
           cp -r src/SwordMastery/i18n out/SwordMastery/
           cp src/SwordMastery/README_USER.txt src/SwordMastery/README_PATCH_41.txt out/SwordMastery/
-          (cd out && zip -qr ../SwordMastery_PATCH41_INSTALL.zip SwordMastery)
-          unzip -t SwordMastery_PATCH41_INSTALL.zip
+          (cd out && zip -qr ../SwordMastery_PATCH41_FIX01_APEX25_INSTALL.zip SwordMastery)
+          unzip -t SwordMastery_PATCH41_FIX01_APEX25_INSTALL.zip
       - name: Upload installable ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: SwordMastery_PATCH41_INSTALL
-          path: SwordMastery_PATCH41_INSTALL.zip
+          name: SwordMastery_PATCH41_FIX01_APEX25_INSTALL
+          path: SwordMastery_PATCH41_FIX01_APEX25_INSTALL.zip
           if-no-files-found: error

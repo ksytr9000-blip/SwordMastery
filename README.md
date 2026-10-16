@@ -1,3 +1,3 @@
-# PATCH41 tower compatibility build validation
+# SwordMastery PATCH41 FIX01 test build
 
-Cumulative source ZIP contains PATCH40 + 1% energy costs for Stage III wave and Swordsmanship Apex, with both toggles, plus weapon-based scaling for all combat skills including Issen and Apex. Separate test branch; main unchanged.
+Cumulative source extends PATCH40 with weapons-scaled damage for all sword skills, Sword Wave stage III and Swordsmanship Apex 1% maximum-stamina costs, individual ON/OFF controls, and a 25% maximum-stamina lockout only for Swordsmanship Apex. The public main branch is untouched. In-game testing still required.
