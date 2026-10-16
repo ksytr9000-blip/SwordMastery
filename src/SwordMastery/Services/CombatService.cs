@@ -93,6 +93,11 @@ internal sealed class CombatService
 
     public bool TryUseBasicSkill(string branch, SaveData data, out string message)
     {
+        if (!TryGetEquippedSword(out _))
+        {
+            message = I18n.Get("combat.requires-sword");
+            return false;
+        }
         branch = branch.ToUpperInvariant();
 
         string id = $"Basic{branch}";
@@ -135,6 +140,11 @@ internal sealed class CombatService
 
     public bool TryUseOhgi(SaveData data, out string message)
     {
+        if (!TryGetEquippedSword(out _))
+        {
+            message = I18n.Get("combat.requires-sword");
+            return false;
+        }
         if (!data.OhgiAccessGranted || data.SelectedOhgi is null)
         {
             message = I18n.Get("combat.no-ohgi");
@@ -182,6 +192,11 @@ internal sealed class CombatService
 
     public bool TryUseUltimate(SaveData data, out string message)
     {
+        if (!TryGetEquippedSword(out _))
+        {
+            message = I18n.Get("combat.requires-sword");
+            return false;
+        }
         if (!data.UltimateAccessGranted || data.SelectedUltimate is null)
         {
             message = I18n.Get("combat.no-ultimate");
@@ -204,8 +219,12 @@ internal sealed class CombatService
             return false;
         }
 
-        // 보법의 극은 컨셉대로 쿨다운 없음.
-        UseUltimateFootwork(progress, stage, data);
+        // Footwork has no cooldown. Its configurable energy cost is paid before moving.
+        if (!UseUltimateFootwork(progress, stage, data))
+        {
+            message = I18n.Get("combat.not-enough-energy");
+            return false;
+        }
         message = "";
         return true;
     }
@@ -820,6 +839,12 @@ internal sealed class CombatService
 
     private void UpdateUltimateAura(SaveData data)
     {
+        // The passive must stop immediately when the farmer changes away from a sword.
+        if (!TryGetEquippedSword(out _))
+        {
+            UltimateAuraTick = 0;
+            return;
+        }
         if (!currentConfig().SwordsmanshipApexEnabled)
         {
             UltimateAuraTick = 0;
@@ -1021,7 +1046,16 @@ internal sealed class CombatService
 
     private bool UseUltimateFootwork(SkillProgress progress, int stage, SaveData data)
     {
+        if (!TryGetEquippedSword(out _))
+            return false;
+
         Farmer player = Game1.player;
+        float costPercent = Math.Clamp(currentConfig().UltimateFootworkEnergyHundredthsPercent, 0, 2000);
+        float staminaCost = Math.Max(0f, player.MaxStamina) * costPercent / 10000f;
+        if (player.Stamina + 0.0001f < staminaCost)
+            return false;
+        if (staminaCost > 0f)
+            player.Stamina = Math.Max(0f, player.Stamina - staminaCost);
         GameLocation location = Game1.currentLocation;
         int facing = player.FacingDirection;
         int weaponDamage = GetWeaponReferenceDamage(data);
@@ -1111,7 +1145,7 @@ internal sealed class CombatService
 
             // Turning the passive off removes already travelling *passive* waves;
             // Basic B's active sword-wave projectile stays unaffected.
-            if (wave.IsPassiveSwordWave && !currentConfig().SwordWaveEnabled)
+            if (wave.IsPassiveSwordWave && (!currentConfig().SwordWaveEnabled || !TryGetEquippedSword(out _)))
             {
                 Projectiles.RemoveAt(i);
                 continue;
@@ -1307,7 +1341,11 @@ internal sealed class CombatService
     private static bool TryGetEquippedSword(out MeleeWeapon? weapon)
     {
         weapon = Game1.player.CurrentTool as MeleeWeapon;
-        return weapon is not null;
+        // Vanilla melee types 0 and 3 are swords. Daggers (1), clubs (2),
+        // scythes, tools and empty hands never activate Sword Mastery skills.
+        return weapon is not null
+            && !weapon.isScythe()
+            && (weapon.type.Value == 0 || weapon.type.Value == 3);
     }
 
     private static void RememberCurrentSword(SaveData data)
