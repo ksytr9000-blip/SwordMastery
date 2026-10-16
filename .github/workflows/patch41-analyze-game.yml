@@ -19,7 +19,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          dotnet tool install --global ilspycmd || true
+          dotnet tool install --global ilspycmd --version 8.2.0.7535 || true
           export PATH="$HOME/.dotnet/tools:$PATH"
           find /home/runner -iname 'Stardew Valley.dll' -o -iname 'StardewValley.dll' | head -10
           asm=$(find /home/runner -iname 'Stardew Valley.dll' -print -quit)
