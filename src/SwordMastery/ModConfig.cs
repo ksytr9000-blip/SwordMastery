@@ -21,6 +21,9 @@ internal sealed class ModConfig
     // 15 means 0.15% of the CURRENT maximum stamina per successful activation cycle.
     // The GMCM option displays the percentage, not this internal integer.
     public int SwordsmanshipApexEnergyHundredthsPercent { get; set; } = 15;
+    // Ultimate Footwork has no cooldown; spend 1.00% of current maximum energy per activation by default.
+    // Internal units are 0.01% for consistency with Swordsmanship Apex.
+    public int UltimateFootworkEnergyHundredthsPercent { get; set; } = 100;
     public SButton SwordWaveToggleKey { get; set; } = SButton.F11;
     public SButton SwordsmanshipApexToggleKey { get; set; } = SButton.F12;
 
