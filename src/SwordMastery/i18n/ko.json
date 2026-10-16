@@ -200,5 +200,9 @@
   "passives.wave.on": "검기: ON",
   "passives.wave.off": "검기: OFF",
   "passives.apex.on": "검술의 극: ON",
-  "passives.apex.off": "검술의 극: OFF"
+  "passives.apex.off": "검술의 극: OFF",
+  "combat.requires-sword": "검을 장착해야 검술 스킬을 사용할 수 있습니다.",
+  "combat.not-enough-energy": "기력이 부족하여 보법의 극을 사용할 수 없습니다.",
+  "gmcm.ultimate-footwork-cost.name": "보법의 극 기력 소모(%)",
+  "gmcm.ultimate-footwork-cost.tip": "보법의 극 사용 시 현재 최대 기력의 일정 비율을 소모합니다. 기본 1.00%, 0%는 소모 없음. 재사용 대기시간은 없습니다."
 }
