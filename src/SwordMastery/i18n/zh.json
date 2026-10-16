@@ -204,5 +204,9 @@
   "combat.requires-sword": "必须装备剑才能使用剑术技能。",
   "combat.not-enough-energy": "体力不足，无法施放终极步法。",
   "gmcm.ultimate-footwork-cost.name": "终极步法体力消耗(%)",
-  "gmcm.ultimate-footwork-cost.tip": "每次施放终极步法时，消耗当前最大体力的一定比例。默认为1.00%，设为0%则不消耗。无冷却时间。"
+  "gmcm.ultimate-footwork-cost.tip": "每次施放终极步法时，消耗当前最大体力的一定比例。默认为1.00%，设为0%则不消耗。无冷却时间。",
+  "reset.statue.question": "要重置哪项技能？",
+  "reset.statue.option": "重置剑术",
+  "reset.statue.already": "剑术重置已安排在今晚。",
+  "reset.statue.insufficient": "重置剑术需要{{cost}}g。"
 }
