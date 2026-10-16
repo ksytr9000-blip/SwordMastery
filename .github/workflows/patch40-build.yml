@@ -1,7 +1,7 @@
-name: SwordMastery PATCH39 FIX01 Vanilla Slash
+name: SwordMastery PATCH40 Passive Options and Apex Energy
 on:
   push:
-    branches: [build/patch39-fix01-slash-vanilla]
+    branches: [build/patch40-passive-configuration]
   workflow_dispatch:
 permissions:
   contents: read
@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unpack complete source
-        run: unzip -q SwordMastery_PATCH_39_FIX01_MINING_VANILLA_SLASH_SOURCE.zip -d src
+      - name: Extract PATCH40 cumulative source
+        run: unzip -q SwordMastery_PATCH_40_PASSIVE_TOGGLES_PERCENT_ENERGY_SOURCE.zip -d src
       - name: Install SMAPI build environment
         uses: Pathoschild/SMAPI-ModBuildWorkflow/add-build-environment@v1
         with:
@@ -21,7 +21,7 @@ jobs:
         run: dotnet restore src/SwordMastery/SwordMastery.csproj
       - name: Compile
         run: dotnet build src/SwordMastery/SwordMastery.csproj -c Release --no-restore
-      - name: Package installable mod
+      - name: Package mod
         shell: bash
         run: |
           set -euo pipefail
@@ -30,12 +30,12 @@ jobs:
           cp src/SwordMastery/manifest.json out/SwordMastery/
           cp -r src/SwordMastery/assets out/SwordMastery/
           cp -r src/SwordMastery/i18n out/SwordMastery/
-          cp src/SwordMastery/README_USER.txt src/SwordMastery/README_PATCH_39_FIX01.txt out/SwordMastery/
-          (cd out && zip -qr ../SwordMastery_PATCH39_FIX01_INSTALL.zip SwordMastery)
-          unzip -t SwordMastery_PATCH39_FIX01_INSTALL.zip
-      - name: Upload installable ZIP
+          cp src/SwordMastery/README_USER.txt src/SwordMastery/README_PATCH_40.txt out/SwordMastery/
+          (cd out && zip -qr ../SwordMastery_PATCH40_PASSIVE_CONTROL_TEST_INSTALL.zip SwordMastery)
+          unzip -t SwordMastery_PATCH40_PASSIVE_CONTROL_TEST_INSTALL.zip
+      - name: Upload test package
         uses: actions/upload-artifact@v4
         with:
-          name: SwordMastery-PATCH39-FIX01-INSTALL
-          path: SwordMastery_PATCH39_FIX01_INSTALL.zip
+          name: SwordMastery-PATCH40-TEST-INSTALL
+          path: SwordMastery_PATCH40_PASSIVE_CONTROL_TEST_INSTALL.zip
           if-no-files-found: error
