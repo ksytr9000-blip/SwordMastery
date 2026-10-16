@@ -10,10 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Dump relevant code for safe patching
+      - name: Dump targeted sections
         run: |
           unzip -q SwordMastery_PATCH_40_PASSIVE_TOGGLES_PERCENT_ENERGY_SOURCE.zip -d src
-          echo '=== CSHARP FILES ==='
-          find src/SwordMastery -name '*.cs' | sort
-          echo '=== SEARCH-RELATED SYMBOLS ==='
-          grep -RniE 'MaxStamina|Stamina|SwordWave|Footwork|Sewer|Respec|ResetCost|Reset|Statue|CurrentTool|MeleeWeapon|SwordsmanshipApex|Pinnacle|Passive|Energy' src/SwordMastery --include='*.cs' | head -650 || true
+          s=src/SwordMastery
+          for spec in 'ModEntry.cs 1 120' 'ModEntry.cs 330 411' 'ModEntry.cs 2260 2405' 'ModEntry.cs 2720 2770' 'ModConfig.cs 1 90' 'Services/CombatService.cs 60 245' 'Services/CombatService.cs 820 1070' 'Services/CombatService.cs 1295 1345' 'Services/SkillService.cs 135 180' 'Models/SaveData.cs 1 70'; do
+            set -- $spec
+            echo "===== $1 $2-$3 ====="
+            awk -v a="$2" -v b="$3" 'NR>=a && NR<=b {print NR ": " $0}' "$s/$1"
+          done
+          echo "===== I18N HEADER/FILES ====="
+          ls "$s/i18n"
+          grep -Rin 'apex-cost\|reset.scheduled\|reset.completed\|footwork' "$s/i18n" | head -55 || true
