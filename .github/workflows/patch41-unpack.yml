@@ -1,0 +1,21 @@
+name: PATCH41 unpack source
+on:
+  push:
+    branches: [build/patch41-sword-gate-footwork-cost]
+    paths: [.github/workflows/patch41-unpack.yml]
+permissions:
+  contents: write
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import cumulative source
+        run: |
+          set -euo pipefail
+          unzip -q SwordMastery_PATCH_40_PASSIVE_TOGGLES_PERCENT_ENERGY_SOURCE.zip -d src
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/SwordMastery
+          git commit -m "Unpack PATCH40 cumulative sources for PATCH41 code changes"
+          git push
