@@ -2,7 +2,7 @@ name: SwordMastery PATCH43 installer
 on:
   push:
     branches:
-      - build/patch43-statue-respec
+      - build/patch43-fix02-sewer-hook
   workflow_dispatch:
 jobs:
   build:
