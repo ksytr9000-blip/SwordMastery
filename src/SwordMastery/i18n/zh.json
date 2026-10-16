@@ -200,5 +200,9 @@
   "passives.wave.on": "剑气：开启",
   "passives.wave.off": "剑气：关闭",
   "passives.apex.on": "剑术之极：开启",
-  "passives.apex.off": "剑术之极：关闭"
+  "passives.apex.off": "剑术之极：关闭",
+  "combat.requires-sword": "必须装备剑才能使用剑术技能。",
+  "combat.not-enough-energy": "体力不足，无法施放终极步法。",
+  "gmcm.ultimate-footwork-cost.name": "终极步法体力消耗(%)",
+  "gmcm.ultimate-footwork-cost.tip": "每次施放终极步法时，消耗当前最大体力的一定比例。默认为1.00%，设为0%则不消耗。无冷却时间。"
 }
