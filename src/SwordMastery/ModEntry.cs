@@ -1,4 +1,5 @@
 using System.Reflection;
+using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
@@ -16,6 +17,7 @@ namespace SwordMastery;
 internal sealed class ModEntry : Mod
 {
     private const string SaveKey = "SwordMastery.SaveData";
+    private static ModEntry? StatueResetOwner;
 
     private string OhgiSecretBookId => $"{ModManifest.UniqueID}_OhgiSecretBook";
     private string InsightDropId => $"{ModManifest.UniqueID}_InsightDrop";
@@ -59,12 +61,15 @@ internal sealed class ModEntry : Mod
             () => Config
         );
         LoadCooldownIcons();
+        StatueResetOwner = this;
+        InstallStatueResetHooks();
 
         helper.Events.GameLoop.GameLaunched += OnGameLaunched;
         helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
         helper.Events.GameLoop.ReturnedToTitle += (_, _) => Combat.ResetMotions();
         helper.Events.GameLoop.Saving += OnSaving;
         helper.Events.GameLoop.DayStarted += OnDayStarted;
+        helper.Events.GameLoop.DayEnding += OnDayEnding;
         helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
         helper.Events.Display.RenderedHud += OnRenderedHud;
         helper.Events.Display.RenderedWorld += OnRenderedWorld;
@@ -2392,12 +2397,28 @@ internal sealed class ModEntry : Mod
         Helper.Data.WriteSaveData(SaveKey, Data);
     }
 
-    private void OnDayStarted(object? sender, DayStartedEventArgs e)
+    private void OnDayEnding(object? sender, DayEndingEventArgs e)
     {
         if (!Data.PendingNightReset)
             return;
 
+        // Execute on the sleep-night transition, the same timing as vanilla respec.
         Skills.ExecuteRespec(Data);
+        Data.ResetCompletedPendingNotice = true;
+    }
+
+    private void OnDayStarted(object? sender, DayStartedEventArgs e)
+    {
+        // Existing saves or forced day advances may still carry the old flag.
+        if (Data.PendingNightReset)
+        {
+            Skills.ExecuteRespec(Data);
+            Data.ResetCompletedPendingNotice = true;
+        }
+        if (!Data.ResetCompletedPendingNotice)
+            return;
+
+        Data.ResetCompletedPendingNotice = false;
         Game1.addHUDMessage(new HUDMessage(
             I18n.Get("reset.completed"),
             HUDMessage.newQuest_type
@@ -2742,6 +2763,107 @@ internal sealed class ModEntry : Mod
         Skills.GrantUltimateAccess(Data);
         NotifyUnlockChanges(prevOhgiQuest, prevUltimateQuest, prevOhgiAccess, prevUltimateAccess);
         Monitor.Log("DEBUG: Ultimate access granted.", LogLevel.Info);
+    }
+
+
+    // Integrates with the real vanilla sewer statue instead of requiring the SMAPI console.
+    // Vanilla professions are left untouched and retain their own 10,000g cost.
+    private void InstallStatueResetHooks()
+    {
+        try
+        {
+            Harmony harmony = new(ModManifest.UniqueID + ".StatueReset");
+            MethodInfo? question = AccessTools.Method(typeof(GameLocation), "createQuestionDialogue",
+                new[] { typeof(string), typeof(Response[]), typeof(string) });
+            MethodInfo? answer = AccessTools.Method(typeof(GameLocation), "answerDialogueAction",
+                new[] { typeof(string), typeof(string[]) });
+            MethodInfo? action = AccessTools.Method(typeof(GameLocation), "performAction",
+                new[] { typeof(string[]), typeof(Farmer), typeof(xTile.Dimensions.Location) });
+            if (question is null || answer is null || action is null)
+                throw new MissingMethodException("Required sewer statue method not found.");
+
+            harmony.Patch(question, prefix: new HarmonyMethod(typeof(ModEntry), nameof(StatueQuestionPrefix)));
+            harmony.Patch(answer, prefix: new HarmonyMethod(typeof(ModEntry), nameof(StatueAnswerPrefix)));
+            harmony.Patch(action, prefix: new HarmonyMethod(typeof(ModEntry), nameof(StatueActionPrefix)));
+            Monitor.Log("Vanilla Statue of Uncertainty: Sword Mastery respec option registered.", LogLevel.Info);
+        }
+        catch (Exception ex)
+        {
+            Monitor.Log("Could not install Sword Mastery statue interaction: " + ex, LogLevel.Error);
+        }
+    }
+
+    private static void StatueQuestionPrefix(GameLocation __instance, string dialogKey, ref Response[] answerChoices)
+    {
+        ModEntry? mod = StatueResetOwner;
+        if (mod is null || !Context.IsWorldReady
+            || __instance is not StardewValley.Locations.Sewer
+            || dialogKey != "professionForget"
+            || mod.Data.SwordLevel <= 0
+            || answerChoices.Any(r => r.responseKey == "swordmastery"))
+            return;
+
+        var responses = answerChoices.ToList();
+        int cancelIndex = responses.FindIndex(r => r.responseKey == "cancel");
+        if (cancelIndex < 0) cancelIndex = responses.Count;
+        responses.Insert(cancelIndex, new Response("swordmastery", I18n.Get("reset.statue.option")));
+        answerChoices = responses.ToArray();
+    }
+
+    private static bool StatueActionPrefix(GameLocation __instance, string[] action, Farmer who, ref bool __result)
+    {
+        ModEntry? mod = StatueResetOwner;
+        if (mod is null || !Context.IsWorldReady
+            || __instance is not StardewValley.Locations.Sewer
+            || action.Length == 0 || action[0] != "DogStatue"
+            || mod.Data.SwordLevel <= 0)
+            return true;
+
+        // Vanilla only offers its statue menu if a vanilla profession can be reset.
+        // Sword Mastery still needs to appear when the player has no eligible vanilla skills.
+        bool vanillaAvailable = GameLocation.canRespec(0) || GameLocation.canRespec(1)
+            || GameLocation.canRespec(2) || GameLocation.canRespec(3) || GameLocation.canRespec(4);
+        if (vanillaAvailable)
+            return true;
+
+        __instance.createQuestionDialogue(I18n.Get("reset.statue.question"), new[]
+        {
+            new Response("swordmastery", I18n.Get("reset.statue.option")),
+            new Response("cancel", Game1.content.LoadString("Strings\\Locations:Sewer_DogStatueCancel"))
+        }, "professionForget");
+        __result = true;
+        return false;
+    }
+
+    private static bool StatueAnswerPrefix(GameLocation __instance, string questionAndAnswer, ref bool __result)
+    {
+        if (StatueResetOwner is not ModEntry mod || !Context.IsWorldReady
+            || __instance is not StardewValley.Locations.Sewer
+            || questionAndAnswer != "professionForget_swordmastery")
+            return true;
+
+        mod.ScheduleStatueRespec();
+        __result = true;
+        return false;
+    }
+
+    private void ScheduleStatueRespec()
+    {
+        if (Data.PendingNightReset)
+        {
+            Game1.drawObjectDialogue(I18n.Get("reset.statue.already"));
+            return;
+        }
+        if (Game1.player.Money < Config.ResetCost)
+        {
+            Game1.drawObjectDialogue(I18n.Get("reset.statue.insufficient", new { cost = Config.ResetCost }));
+            return;
+        }
+
+        Game1.player.Money -= Config.ResetCost;
+        Data.PendingNightReset = true;
+        Game1.playSound("dog_bark");
+        Game1.drawObjectDialogue(I18n.Get("reset.scheduled", new { cost = Config.ResetCost }));
     }
 
     private void CommandReset(string command, string[] args)
