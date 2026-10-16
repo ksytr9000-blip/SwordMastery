@@ -1,0 +1,33 @@
+name: PATCH41 inspect statue API
+on:
+  push:
+    branches: [build/patch41-sword-gate-footwork-cost]
+    paths: [.github/workflows/patch41-analyze-game.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup mod compilation environment
+        uses: Pathoschild/SMAPI-ModBuildWorkflow/add-build-environment@v1
+        with:
+          dotnet_version: 6.0.x
+          force_build_with_dotnet_version: true
+      - name: Decompile statue entry points
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet tool install --global ilspycmd || true
+          export PATH="$HOME/.dotnet/tools:$PATH"
+          find /home/runner -iname 'Stardew Valley.dll' -o -iname 'StardewValley.dll' | head -10
+          asm=$(find /home/runner -iname 'Stardew Valley.dll' -print -quit)
+          if [[ -z "$asm" ]]; then
+            echo MISSING_STARDew_ASM
+            exit 0
+          fi
+          ilspycmd -t StardewValley.Locations.Sewer "$asm" > /tmp/Sewer.cs || true
+          grep -niE -C 16 'dogStatue|changeProfessions|statue|forget|answerDialogueAction|performAction|createQuestionDialogue' /tmp/Sewer.cs | head -500 || true
+          ilspycmd -t StardewValley.GameLocation "$asm" > /tmp/GameLocation.cs || true
+          grep -niE -C 3 'createQuestionDialogue\(|answerDialogueAction\(' /tmp/GameLocation.cs | head -110 || true
