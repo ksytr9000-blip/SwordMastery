@@ -200,5 +200,9 @@
   "passives.wave.on": "Sword Wave: ON",
   "passives.wave.off": "Sword Wave: OFF",
   "passives.apex.on": "Swordsmanship Apex: ON",
-  "passives.apex.off": "Swordsmanship Apex: OFF"
+  "passives.apex.off": "Swordsmanship Apex: OFF",
+  "combat.requires-sword": "Equip a sword to use Sword Mastery skills.",
+  "combat.not-enough-energy": "Not enough Energy to activate Ultimate Footwork.",
+  "gmcm.ultimate-footwork-cost.name": "Ultimate Footwork Energy Cost (% Max)",
+  "gmcm.ultimate-footwork-cost.tip": "Energy spent on each use of Ultimate Footwork. Default 1.00% of current maximum Energy; 0% disables the cost. No cooldown is added."
 }
