@@ -204,5 +204,9 @@
   "combat.requires-sword": "검을 장착해야 검술 스킬을 사용할 수 있습니다.",
   "combat.not-enough-energy": "기력이 부족하여 보법의 극을 사용할 수 없습니다.",
   "gmcm.ultimate-footwork-cost.name": "보법의 극 기력 소모(%)",
-  "gmcm.ultimate-footwork-cost.tip": "보법의 극 사용 시 현재 최대 기력의 일정 비율을 소모합니다. 기본 1.00%, 0%는 소모 없음. 재사용 대기시간은 없습니다."
+  "gmcm.ultimate-footwork-cost.tip": "보법의 극 사용 시 현재 최대 기력의 일정 비율을 소모합니다. 기본 1.00%, 0%는 소모 없음. 재사용 대기시간은 없습니다.",
+  "reset.statue.question": "어떤 기술을 초기화하시겠습니까?",
+  "reset.statue.option": "검술 초기화",
+  "reset.statue.already": "검술 초기화가 이미 오늘 밤으로 예약되어 있습니다.",
+  "reset.statue.insufficient": "검술 초기화에는 {{cost}}골드가 필요합니다."
 }
