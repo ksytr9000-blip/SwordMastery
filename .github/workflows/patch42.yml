@@ -1,8 +1,8 @@
-name: SwordMastery PATCH42 FIX01 installer
+name: SwordMastery PATCH43 installer
 on:
   push:
     branches:
-      - build/patch42-ultimate-footwork-cost
+      - build/patch43-statue-respec
   workflow_dispatch:
 jobs:
   build:
@@ -24,6 +24,9 @@ jobs:
       - name: Apply PATCH42 FIX01 GMCM controls
         working-directory: src
         run: python3 ../patch42_fix01.py
+      - name: Apply PATCH43 statue link
+        working-directory: src
+        run: python3 ../patch43_statue.py
       - name: Restore and compile
         working-directory: src/SwordMastery
         run: |
@@ -40,9 +43,9 @@ jobs:
           cp -r src/SwordMastery/assets package/SwordMastery/
           cp src/SwordMastery/README_USER.txt package/SwordMastery/ || true
           cd package
-          zip -qr ../SwordMastery_PATCH_42_FIX01_INSTALL.zip SwordMastery
+          zip -qr ../SwordMastery_PATCH_43_INSTALL.zip SwordMastery
       - uses: actions/upload-artifact@v4
         with:
-          name: SwordMastery_PATCH_42_FIX01_INSTALL
-          path: SwordMastery_PATCH_42_FIX01_INSTALL.zip
+          name: SwordMastery_PATCH_43_INSTALL
+          path: SwordMastery_PATCH_43_INSTALL.zip
           if-no-files-found: error
