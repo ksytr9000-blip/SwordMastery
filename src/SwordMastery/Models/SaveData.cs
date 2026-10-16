@@ -52,6 +52,7 @@ internal sealed class SaveData
     public bool UltimateRewardDeliveryPending { get; set; }
 
     public bool PendingNightReset { get; set; }
+    public bool ResetCompletedPendingNotice { get; set; }
 
     public static Dictionary<string, SkillProgress> CreateDefaultSkills()
     {
