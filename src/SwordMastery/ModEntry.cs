@@ -389,6 +389,18 @@ internal sealed class ModEntry : Mod
             formatValue: value => $"{value / 100f:0.00}%",
             fieldId: "SwordsmanshipApexEnergyHundredthsPercent"
         );
+        gmcm.AddNumberOption(
+            mod: ModManifest,
+            getValue: () => Config.UltimateFootworkEnergyHundredthsPercent,
+            setValue: value => Config.UltimateFootworkEnergyHundredthsPercent = Math.Clamp(value, 0, 2000),
+            name: () => I18n.GetUi("gmcm.ultimate-footwork-cost.name"),
+            tooltip: () => I18n.GetUi("gmcm.ultimate-footwork-cost.tip"),
+            min: 0,
+            max: 2000,
+            interval: 25,
+            formatValue: value => $"{value / 100f:0.00}%",
+            fieldId: "UltimateFootworkEnergyHundredthsPercent"
+        );
         gmcm.AddKeybind(
             mod: ModManifest,
             getValue: () => Config.SwordsmanshipApexToggleKey,
