@@ -1,3 +1,3 @@
-# SwordMastery PATCH40 test build
+# PATCH41 tower compatibility build validation
 
-Full cumulative source based on PATCH39 FIX01 (includes PATCH38 CJK UI fixes). New monster-only Sword Wave default, environmental toggles, F11/F12 runtime passive toggles, Apex energy based on current MaxStamina, GMCM controls in 4 languages. Main branch untouched.
+Cumulative source ZIP contains PATCH40 + 1% energy costs for Stage III wave and Swordsmanship Apex, with both toggles, plus weapon-based scaling for all combat skills including Issen and Apex. Separate test branch; main unchanged.

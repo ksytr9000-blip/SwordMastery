@@ -1,7 +1,7 @@
-name: SwordMastery PATCH40 Passive Options and Apex Energy
+name: Sword Mastery PATCH41 Weapon Scaling + Passive Energy
 on:
   push:
-    branches: [build/patch40-passive-configuration]
+    branches: [build/patch41-weapon-scaling-passives]
   workflow_dispatch:
 permissions:
   contents: read
@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Extract PATCH40 cumulative source
-        run: unzip -q SwordMastery_PATCH_40_PASSIVE_TOGGLES_PERCENT_ENERGY_SOURCE.zip -d src
-      - name: Install SMAPI build environment
+      - name: Extract complete cumulative PATCH41 source
+        run: unzip -q SwordMastery_PATCH_41_TOWER_ALL_WEAPONS_PASSIVE_1PCT_SOURCE.zip -d src
+      - name: Install Stardew SMAPI build environment
         uses: Pathoschild/SMAPI-ModBuildWorkflow/add-build-environment@v1
         with:
           dotnet_version: 6.0.x
@@ -21,7 +21,7 @@ jobs:
         run: dotnet restore src/SwordMastery/SwordMastery.csproj
       - name: Compile
         run: dotnet build src/SwordMastery/SwordMastery.csproj -c Release --no-restore
-      - name: Package mod
+      - name: Package installable mod
         shell: bash
         run: |
           set -euo pipefail
@@ -30,12 +30,12 @@ jobs:
           cp src/SwordMastery/manifest.json out/SwordMastery/
           cp -r src/SwordMastery/assets out/SwordMastery/
           cp -r src/SwordMastery/i18n out/SwordMastery/
-          cp src/SwordMastery/README_USER.txt src/SwordMastery/README_PATCH_40.txt out/SwordMastery/
-          (cd out && zip -qr ../SwordMastery_PATCH40_PASSIVE_CONTROL_TEST_INSTALL.zip SwordMastery)
-          unzip -t SwordMastery_PATCH40_PASSIVE_CONTROL_TEST_INSTALL.zip
-      - name: Upload test package
+          cp src/SwordMastery/README_USER.txt src/SwordMastery/README_PATCH_41.txt out/SwordMastery/
+          (cd out && zip -qr ../SwordMastery_PATCH41_INSTALL.zip SwordMastery)
+          unzip -t SwordMastery_PATCH41_INSTALL.zip
+      - name: Upload installable ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: SwordMastery-PATCH40-TEST-INSTALL
-          path: SwordMastery_PATCH40_PASSIVE_CONTROL_TEST_INSTALL.zip
+          name: SwordMastery_PATCH41_INSTALL
+          path: SwordMastery_PATCH41_INSTALL.zip
           if-no-files-found: error
