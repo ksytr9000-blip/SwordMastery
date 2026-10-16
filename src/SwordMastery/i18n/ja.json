@@ -204,5 +204,9 @@
   "combat.requires-sword": "剣を装備しているときだけ剣術スキルを使えます。",
   "combat.not-enough-energy": "気力が不足しているため、極意の歩法を使用できません。",
   "gmcm.ultimate-footwork-cost.name": "極意の歩法の気力消費(%)",
-  "gmcm.ultimate-footwork-cost.tip": "極意の歩法の発動時、現在の最大気力の一定割合を消費します。初期設定は1.00%、0%で消費なし。クールダウンはありません。"
+  "gmcm.ultimate-footwork-cost.tip": "極意の歩法の発動時、現在の最大気力の一定割合を消費します。初期設定は1.00%、0%で消費なし。クールダウンはありません。",
+  "reset.statue.question": "どのスキルをリセットしますか？",
+  "reset.statue.option": "剣術の振り直し",
+  "reset.statue.already": "剣術の振り直しは今夜に予約済みです。",
+  "reset.statue.insufficient": "剣術の振り直しには{{cost}}gが必要です。"
 }
