@@ -1,0 +1,14 @@
+Sword Mastery 0.1.8 — PATCH44 FIX04 test release candidate
+
+Build and automated checks passed. The user reported no apparent recurrence, but complete poison-kill/sleep/restart coverage is not confirmed.
+
+- Separated ordinary GMCM config saving from permanent progression and explicit debug actions.
+- Debug level/SP/access edits require clicking Apply OFF to ON. Level changes retain XP; SP is set independently.
+- Added growth snapshots before explicit debug applications. Lost historical levels/XP are not guessed or automatically restored.
+- Sword waves now follow actual native sword swings instead of raw click frequency.
+- Added a targeted Walk Of Life compatibility bridge for DaLionheart 2.2.6's DoT/poison kill callbacks, retaining status/profession effects and native kill processing.
+- Blocked new attacks and Sword Mastery skill activation during Cowardly Gunfighter dodge rolls.
+- Retained cumulative skills, progression, sword requirements, toggles/stamina settings, explicit statue respec and EN/KO/JA/ZH support.
+
+Back up the save and old mod folder, then install the INSTALL archive. SOURCE is for development.
+Integration mods remain optional. See VALIDATION_STATUS.txt for verification coverage and outstanding runtime checks.

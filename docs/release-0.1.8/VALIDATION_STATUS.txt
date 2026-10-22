@@ -1,0 +1,35 @@
+Sword Mastery 0.1.8 release candidate — validation status
+Date: 2026-10-22 (Asia/Seoul)
+Code baseline: PATCH44 FIX04, commit 10272c3be22b7d8b1e6b1a678d65c36a6f3e8abf
+Release changes: version metadata and documentation only; no C# gameplay code changes.
+
+USER IN-GAME CONFIRMED / REPORTED
+- Genuine PATCH44 DLL retained Lv10 / XP20 / SP10 after HUD setting Save. Other ordinary settings were reported okay, without an individual full checklist.
+- FIX01 explicit debug level/SP application worked; the supplied log shows XP20 preserved and backup creation.
+- FIX04 roll attack guard was reported working after the user requested blocking attacks during rolls.
+- At release preparation, user reported no apparent recurrence but explicitly could not confirm the verification coverage. This is not a confirmed poison/sleep/restart test pass.
+
+AUTOMATED
+- FIX04 GitHub Actions compile/package passed.
+- 1049 regression assertions passed, including 100 roll/attack/end-roll cycles using game stand-ins.
+- Native wave hook/animation/progression tests and 100 DoT plus 100 poison callback invocations using stand-ins passed.
+- These assertions are not 1049 in-game tests and do not replace 100+ actual combat attacks/kills.
+- Release 0.1.8 is rebuilt from the same gameplay code. Its CI result and checksums are supplied with the distribution kit.
+
+RUNTIME CHECKS STILL NOT CONFIRMED IN THE CONVERSATION
+- FIX03/FIX04 poison/DoT combat rerun after the real DaLionheart exception.
+- Native wave timing for both slow and fast normal swords after FIX02.
+- Sleep, full exit/restart, and retained progression/selections after final cumulative build.
+- 100+ actual attack/kill situations covering simultaneous kills, drops and combat XP.
+
+VERSIONS OBSERVED IN THE USER LOG
+Stardew Valley 1.6.15; SMAPI 4.5.2; GMCM 1.16.0;
+Walk Of Life - Rebirth 1.5.0-Beta5; DaLionheart 2.2.6; Cowardly Gunfighter 0.12.11.
+No claim is made that every third-party mod/version is fully compatible.
+
+ROOT-CAUSE RECORD
+A mixed install contained PATCH44 C# source plus an older compiled SwordMastery.dll with the unsafe direct debug setter.
+The real onMonsterKilled exception came from DaLionheart 2.2.6 requesting an instance method as a static delegate.
+Roll-then-attack was later identified as a freeze trigger; the earlier extreme-weapon-only hypothesis was not confirmed.
+
+Recovery: supplied saves contained existing growth data; no save was modified or auto-recovered from estimated points.

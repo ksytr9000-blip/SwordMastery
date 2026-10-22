@@ -1,0 +1,12 @@
+Sword Mastery 0.1.8 source
+=========================
+This source archive contains src/SwordMastery, tests, release notes and the current root GitHub Actions workflow. It has no compiled game DLLs, user config, saves or debug backups.
+
+Build: dotnet restore src/SwordMastery/SwordMastery.csproj
+       dotnet build src/SwordMastery/SwordMastery.csproj -c Release
+Game and SMAPI references are required. The included .github/workflows/patch44.yml provisions a SMAPI build environment on GitHub Actions.
+See tests/README.md for automated regression commands.
+
+Gameplay baseline: PATCH44 FIX04 / 10272c3be22b7d8b1e6b1a678d65c36a6f3e8abf.
+Release 0.1.8 changes only version metadata and documentation from that baseline.
+Do not install this archive into Mods. Use SwordMastery_0.1.8_INSTALL.zip.
