@@ -4,6 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../src/SwordMastery/Integrations/RollAttackCompatibility.cs" Link="RollAttackCompatibility.cs" />
     <PackageReference Include="Lib.Harmony" Version="2.3.3" />
     <Compile Include="../src/SwordMastery/Integrations/MonsterKillDelegateFactory.cs" Link="MonsterKillDelegateFactory.cs" />
     <Compile Include="../src/SwordMastery/Integrations/WalkOfLifeCompatibility.cs" Link="WalkOfLifeCompatibility.cs" />

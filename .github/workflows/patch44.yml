@@ -1,7 +1,7 @@
-name: SwordMastery PATCH44 FIX03 WOL kill callback
+name: SwordMastery PATCH44 FIX04 roll attack guard
 on:
   push:
-    branches: [build/patch44-fix03-wol-kill-callback]
+    branches: [build/patch44-fix04-roll-attack-lock]
     paths:
       - 'src/**'
       - 'tests/**'
@@ -53,17 +53,17 @@ jobs:
           cp src/SwordMastery/manifest.json package/SwordMastery/
           cp -r src/SwordMastery/i18n src/SwordMastery/assets package/SwordMastery/
           cp src/SwordMastery/README_USER.txt package/SwordMastery/ || true
-          cp docs/PATCH44_FIX03_WOL_COMPATIBILITY.md package/SwordMastery/
-          (cd package && zip -qr ../SwordMastery_PATCH44_FIX03_WOL_COMPAT_INSTALL.zip SwordMastery)
-          unzip -t SwordMastery_PATCH44_FIX03_WOL_COMPAT_INSTALL.zip
-          (cd src && zip -qr ../SwordMastery_PATCH44_FIX03_EDITABLE_SOURCE.zip SwordMastery -x 'SwordMastery/bin/*' 'SwordMastery/obj/*' 'SwordMastery/*.dll' 'SwordMastery/*.pdb' 'SwordMastery/config.json')
+          cp docs/PATCH44_FIX04_ROLL_ATTACK_GUARD.md package/SwordMastery/
+          (cd package && zip -qr ../SwordMastery_PATCH44_FIX04_ROLL_GUARD_INSTALL.zip SwordMastery)
+          unzip -t SwordMastery_PATCH44_FIX04_ROLL_GUARD_INSTALL.zip
+          (cd src && zip -qr ../SwordMastery_PATCH44_FIX04_EDITABLE_SOURCE.zip SwordMastery -x 'SwordMastery/bin/*' 'SwordMastery/obj/*' 'SwordMastery/*.dll' 'SwordMastery/*.pdb' 'SwordMastery/config.json')
       - uses: actions/upload-artifact@v4
         with:
-          name: SwordMastery_PATCH44_FIX03_WOL_COMPAT_INSTALL
-          path: SwordMastery_PATCH44_FIX03_WOL_COMPAT_INSTALL.zip
+          name: SwordMastery_PATCH44_FIX04_ROLL_GUARD_INSTALL
+          path: SwordMastery_PATCH44_FIX04_ROLL_GUARD_INSTALL.zip
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
-          name: SwordMastery_PATCH44_FIX03_EDITABLE_SOURCE
-          path: SwordMastery_PATCH44_FIX03_EDITABLE_SOURCE.zip
+          name: SwordMastery_PATCH44_FIX04_EDITABLE_SOURCE
+          path: SwordMastery_PATCH44_FIX04_EDITABLE_SOURCE.zip
           if-no-files-found: error

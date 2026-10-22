@@ -9,6 +9,7 @@ using StardewValley.TerrainFeatures;
 using StardewValley.Tools;
 using SwordMastery;
 using SwordMastery.Models;
+using SwordMastery.Integrations;
 
 namespace SwordMastery.Services;
 
@@ -83,7 +84,7 @@ internal sealed class CombatService
             + $"weaponSpeed={weapon?.speed.Value}, speedBuff={p.buffs.WeaponSpeedMultiplier}, "
             + $"CanMove={p.CanMove}, UsingTool={p.UsingTool}, pause={p.FarmerSprite.PauseForSingleAnimation}, "
             + $"frame={p.FarmerSprite.CurrentFrame}, animation={p.FarmerSprite.CurrentSingleAnimation}, index={p.FarmerSprite.currentAnimationIndex}, "
-            + $"stamina={p.Stamina}, nativeSwings={nativeSwingCount}, waves={waveCount}, "
+            + $"rolling={RollAttackCompatibility.IsRolling(p)}, stamina={p.Stamina}, nativeSwings={nativeSwingCount}, waves={waveCount}, "
             + $"event={Game1.eventUp}, menu={Game1.activeClickableMenu?.GetType().Name ?? "none"}";
     }
 
@@ -143,6 +144,11 @@ internal sealed class CombatService
 
     public bool TryUseBasicSkill(string branch, SaveData data, out string message)
     {
+        if (RollAttackCompatibility.IsRolling(Game1.player))
+        {
+            message = "";
+            return false;
+        }
         branch = branch.ToUpperInvariant();
 
         string id = $"Basic{branch}";
@@ -185,6 +191,11 @@ internal sealed class CombatService
 
     public bool TryUseOhgi(SaveData data, out string message)
     {
+        if (RollAttackCompatibility.IsRolling(Game1.player))
+        {
+            message = "";
+            return false;
+        }
         if (!data.OhgiAccessGranted || data.SelectedOhgi is null)
         {
             message = I18n.Get("combat.no-ohgi");
@@ -232,6 +243,11 @@ internal sealed class CombatService
 
     public bool TryUseUltimate(SaveData data, out string message)
     {
+        if (RollAttackCompatibility.IsRolling(Game1.player))
+        {
+            message = "";
+            return false;
+        }
         if (!data.UltimateAccessGranted || data.SelectedUltimate is null)
         {
             message = I18n.Get("combat.no-ultimate");
@@ -278,6 +294,8 @@ internal sealed class CombatService
     /// </summary>
     public void OnVanillaSwordAttack(SaveData data)
     {
+        if (RollAttackCompatibility.IsRolling(Game1.player))
+            return;
         nativeSwingCount++;
         if (!currentConfig().SwordWaveEnabled)
             return;

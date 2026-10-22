@@ -105,6 +105,8 @@ internal sealed class ModEntry : Mod
         helper.Events.Display.RenderedHud += OnRenderedHud;
         helper.Events.Display.RenderedWorld += OnRenderedWorld;
         helper.Events.Input.ButtonPressed += OnButtonPressed;
+        helper.Events.Input.ButtonsChanged += (_, _) => SuppressRollingAttacks();
+        helper.Events.GameLoop.UpdateTicking += (_, _) => SuppressRollingAttacks();
         helper.Events.Content.AssetRequested += OnAssetRequested;
         helper.Events.World.NpcListChanged += OnNpcListChanged;
 
@@ -121,7 +123,7 @@ internal sealed class ModEntry : Mod
         helper.ConsoleCommands.Add("sm_grant_ultimate", "DEBUG: mark Ultimate unlock quest completed.", CommandGrantUltimate);
         helper.ConsoleCommands.Add("sm_reset", "Pay the configured gold cost and schedule respec for next morning.", CommandReset);
 
-        Monitor.Log("Sword Mastery PATCH44 FIX03 loaded (WOL/DaLionheart kill callback compatibility).", LogLevel.Info);
+        Monitor.Log("Sword Mastery PATCH44 FIX04 loaded (attacks blocked during Cowardly Gunfighter rolls).", LogLevel.Info);
     }
 
     private static void SwordAttackPostfix(MeleeWeapon __instance, Farmer who, bool __runOriginal)
@@ -130,6 +132,7 @@ internal sealed class ModEntry : Mod
         ModEntry? instance = StatueInstance;
         if (!__runOriginal || instance is null || !Context.IsWorldReady
             || !ReferenceEquals(who, Game1.player) || !ReferenceEquals(who.CurrentTool, __instance)
+            || RollAttackCompatibility.IsRolling(who)
             || !who.UsingTool || !who.FarmerSprite.PauseForSingleAnimation
             || Game1.eventUp || Game1.activeClickableMenu is not null)
             return;
@@ -239,6 +242,7 @@ internal sealed class ModEntry : Mod
     private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
     {
         WalkOfLifeCompatibility.Install(Helper, Monitor, ModManifest.UniqueID);
+        RollAttackCompatibility.Install(Helper, Monitor, ModManifest.UniqueID);
         IGenericModConfigMenuApi? gmcm =
             Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
 
@@ -2365,10 +2369,36 @@ internal sealed class ModEntry : Mod
         }
     }
 
+    private bool IsCombatButton(SButton button)
+        => button == SButton.MouseLeft || button == SButton.MouseRight
+            || button == SButton.C || button == SButton.X
+            || button == SButton.ControllerX || button == SButton.ControllerA
+            || button == Config.BasicSkillAKey || button == Config.BasicSkillBKey
+            || button == Config.BasicSkillCKey || button == Config.OhgiSkillKey
+            || button == Config.UltimateSkillKey;
+
+    private void SuppressRollingAttacks()
+    {
+        if (!Context.IsWorldReady || !RollAttackCompatibility.IsRolling(Game1.player))
+            return;
+        foreach (SButton button in new[] { SButton.MouseLeft, SButton.MouseRight, SButton.C, SButton.X,
+            SButton.ControllerX, SButton.ControllerA, Config.BasicSkillAKey, Config.BasicSkillBKey,
+            Config.BasicSkillCKey, Config.OhgiSkillKey, Config.UltimateSkillKey })
+        {
+            if (button != SButton.None && Helper.Input.IsDown(button))
+                Helper.Input.Suppress(button);
+        }
+    }
+
     private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
     {
         if (!Context.IsWorldReady)
             return;
+        if (RollAttackCompatibility.IsRolling(Game1.player) && IsCombatButton(e.Button))
+        {
+            Helper.Input.Suppress(e.Button);
+            return;
+        }
 
         // Sword Mastery menu.
         if (e.Button == Config.OpenMenuKey)

@@ -14,6 +14,9 @@ namespace StardewValley
     }
     public static class Game1
     {
+        public static int ToolPresses;
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        public static bool pressUseToolButton() { ToolPresses++; return true; }
         public static bool eventUp;
         public static object? activeClickableMenu;
         public static Farmer player = new();
@@ -22,6 +25,10 @@ namespace StardewValley
     public class Farmer
     {
         public StardewValley.Tools.MeleeWeapon? CurrentTool;
+        public int FireCalls;
+        public int WeaponCalls;
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        public void FireTool() { FireCalls++; }
         public bool UsingTool;
         public bool CanMove = true;
         public int FacingDirection;
@@ -43,5 +50,14 @@ namespace StardewValley
         }
     }
 }
-namespace StardewValley.Tools { public class MeleeWeapon { } }
+namespace StardewValley.Tools
+{
+    public class MeleeWeapon
+    {
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        public void leftClick(StardewValley.Farmer who) { who.WeaponCalls++; }
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        public void animateSpecialMove(StardewValley.Farmer who) { who.WeaponCalls++; }
+    }
+}
 namespace StardewModdingAPI { public static class Context { public static bool IsWorldReady = true; } }

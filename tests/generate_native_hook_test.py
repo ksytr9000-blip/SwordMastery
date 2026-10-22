@@ -14,6 +14,7 @@ using StardewValley;
 using StardewValley.Tools;
 using StardewModdingAPI;
 using SwordMastery.Models;
+using SwordMastery.Integrations;
 namespace SwordMastery;
 internal sealed class ModEntry
 {

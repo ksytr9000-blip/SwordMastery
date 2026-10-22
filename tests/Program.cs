@@ -48,4 +48,5 @@ Check(Snapshot(roundtrip) == Snapshot(data), "save serialization roundtrip prese
 MotionTests.Run(Check);
 NativeHookTests.Run(Check);
 WolCompatibilityTests.Run(Check);
-Console.WriteLine($"{checks} progression/animation/WOL regression checks passed. These are not in-game tests.");
+RollGuardTests.Run(Check);
+Console.WriteLine($"{checks} progression/animation/WOL/roll regression checks passed. These are not in-game tests.");
