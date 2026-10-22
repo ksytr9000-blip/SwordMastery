@@ -1,75 +1,61 @@
-name: SwordMastery PATCH44 GMCM safety
+name: SwordMastery PATCH44 GMCM safe source build
 on:
   push:
-    branches:
-      - build/patch44-gmcm-safety
+    branches: [build/patch44-gmcm-safety]
+    paths:
+      - 'src/**'
+      - '.github/workflows/patch44.yml'
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate directly editable cumulative source
+        run: |
+          set -euo pipefail
+          test -f src/SwordMastery/ModEntry.cs
+          test -f src/SwordMastery/SwordMastery.csproj
+          grep -q 'fieldId: "DebugApplyChangesExplicitly"' src/SwordMastery/ModEntry.cs
+          ! grep -q 'setValue: value => ApplyDebugSwordLevel(value)' src/SwordMastery/ModEntry.cs
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for name in ['default','ko','ja','zh']:
+              data=json.loads((Path('src/SwordMastery/i18n')/(name+'.json')).read_text(encoding='utf-8-sig'))
+              assert 'gmcm.debug.apply.name' in data, name
+          print('GMCM progress protection and i18n checks passed.')
+          PY
       - uses: Pathoschild/SMAPI-ModBuildWorkflow/add-build-environment@v1
         with:
           dotnet_version: 6.0.x
           force_build_with_dotnet_version: true
-      - name: Unpack PATCH41 cumulative source
-        shell: bash
-        run: |
-          unzip -q SwordMastery_PATCH_41_FIX01_TOWER_SCALING_PASSIVES_APEX25_SOURCE.zip -d src
-          test -f src/SwordMastery/SwordMastery.csproj
-      - name: Apply PATCH42 fix
-        working-directory: src
-        run: python3 ../patch42_apply.py
-      - name: Apply PATCH42 FIX01 GMCM controls
-        working-directory: src
-        run: python3 ../patch42_fix01.py
-      - name: Apply PATCH43 statue link
-        working-directory: src
-        run: python3 ../patch43_statue.py
-      - name: Apply PATCH43 FIX01 overload selection
-        working-directory: src
-        run: python3 ../patch43_fix01.py
-      - name: Apply PATCH43 FIX02 statue action argument fix
-        working-directory: src
-        run: python3 ../patch43_fix02.py
-      - name: Apply FIX03 and FIX04 reset flow
-        working-directory: src
-        run: |
-          python3 ../patch43_fix03.py
-          python3 ../patch43_fix04.py
-          python3 ../patch43_fix05.py
-      - name: Apply PATCH44 GMCM progression safety
-        working-directory: src
-        run: python3 ../patch44_gmcm_safety.py
-      - name: Validate debug setters are isolated
-        working-directory: src
-        shell: bash
-        run: |
-          set -euo pipefail
-          grep -q 'fieldId: "DebugApplyChangesExplicitly"' SwordMastery/ModEntry.cs
-          ! grep -q 'setValue: value => ApplyDebugSwordLevel(value)' SwordMastery/ModEntry.cs
-          grep -q 'setValue: value => DebugDraftOhgiAccess = value' SwordMastery/ModEntry.cs
-          grep -q 'setValue: value => DebugDraftUltimateAccess = value' SwordMastery/ModEntry.cs
       - name: Restore and compile
         working-directory: src/SwordMastery
         run: |
           dotnet restore SwordMastery.csproj
           dotnet build SwordMastery.csproj -c Release --no-restore
-      - name: Create ready-to-install ZIP
+      - name: Package cumulative installer and editable source
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
           mkdir -p package/SwordMastery
           cp src/SwordMastery/bin/Release/net6.0/SwordMastery.dll package/SwordMastery/
           cp src/SwordMastery/manifest.json package/SwordMastery/
-          cp -r src/SwordMastery/i18n package/SwordMastery/
-          cp -r src/SwordMastery/assets package/SwordMastery/
+          cp -r src/SwordMastery/i18n src/SwordMastery/assets package/SwordMastery/
           cp src/SwordMastery/README_USER.txt package/SwordMastery/ || true
-          cd package
-          zip -qr ../SwordMastery_PATCH_44_GMCM_SAFE_TEST_INSTALL.zip SwordMastery
+          (cd package && zip -qr ../SwordMastery_PATCH44_GMCM_SAFETY_TEST_INSTALL.zip SwordMastery)
+          unzip -t SwordMastery_PATCH44_GMCM_SAFETY_TEST_INSTALL.zip
+          (cd src && zip -qr ../SwordMastery_PATCH44_EDITABLE_SOURCE.zip SwordMastery -x 'SwordMastery/bin/*' 'SwordMastery/obj/*')
       - uses: actions/upload-artifact@v4
         with:
-          name: SwordMastery_PATCH_44_GMCM_SAFE_TEST_INSTALL
-          path: SwordMastery_PATCH_44_GMCM_SAFE_TEST_INSTALL.zip
+          name: SwordMastery_PATCH44_GMCM_SAFETY_TEST_INSTALL
+          path: SwordMastery_PATCH44_GMCM_SAFETY_TEST_INSTALL.zip
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SwordMastery_PATCH44_EDITABLE_SOURCE
+          path: SwordMastery_PATCH44_EDITABLE_SOURCE.zip
           if-no-files-found: error
