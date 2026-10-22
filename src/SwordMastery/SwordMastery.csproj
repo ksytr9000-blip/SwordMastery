@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SwordMastery</AssemblyName>
     <RootNamespace>SwordMastery</RootNamespace>
-    <Version>0.1.7-patch44.2</Version>
+    <Version>0.1.7-patch44.3</Version>
     <EnableModZip>false</EnableModZip>
   </PropertyGroup>
 

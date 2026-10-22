@@ -121,7 +121,7 @@ internal sealed class ModEntry : Mod
         helper.ConsoleCommands.Add("sm_grant_ultimate", "DEBUG: mark Ultimate unlock quest completed.", CommandGrantUltimate);
         helper.ConsoleCommands.Add("sm_reset", "Pay the configured gold cost and schedule respec for next morning.", CommandReset);
 
-        Monitor.Log("Sword Mastery PATCH44 FIX02 loaded (native sword waves; animation ownership guards).", LogLevel.Info);
+        Monitor.Log("Sword Mastery PATCH44 FIX03 loaded (WOL/DaLionheart kill callback compatibility).", LogLevel.Info);
     }
 
     private static void SwordAttackPostfix(MeleeWeapon __instance, Farmer who, bool __runOriginal)
@@ -238,6 +238,7 @@ internal sealed class ModEntry : Mod
 
     private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
     {
+        WalkOfLifeCompatibility.Install(Helper, Monitor, ModManifest.UniqueID);
         IGenericModConfigMenuApi? gmcm =
             Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
 

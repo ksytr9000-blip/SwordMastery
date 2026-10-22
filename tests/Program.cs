@@ -47,4 +47,5 @@ var roundtrip = JsonSerializer.Deserialize<SaveData>(Snapshot(data))!;
 Check(Snapshot(roundtrip) == Snapshot(data), "save serialization roundtrip preserves state");
 MotionTests.Run(Check);
 NativeHookTests.Run(Check);
-Console.WriteLine($"{checks} progression/animation regression checks passed. These are not in-game tests.");
+WolCompatibilityTests.Run(Check);
+Console.WriteLine($"{checks} progression/animation/WOL regression checks passed. These are not in-game tests.");

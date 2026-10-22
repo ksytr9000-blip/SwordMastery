@@ -1,6 +1,17 @@
 namespace StardewValley
 {
-    public class GameLocation { }
+    public class GameLocation
+    {
+        public int Kills;
+        public Farmer? LastKiller;
+        public StardewValley.Monsters.Monster? LastMonster;
+        public Microsoft.Xna.Framework.Rectangle LastBox;
+        public bool LastBomb;
+        private void onMonsterKilled(Farmer farmer, StardewValley.Monsters.Monster monster, Microsoft.Xna.Framework.Rectangle box, bool bomb)
+        {
+            Kills++; LastKiller = farmer; LastMonster = monster; LastBox = box; LastBomb = bomb;
+        }
+    }
     public static class Game1
     {
         public static bool eventUp;

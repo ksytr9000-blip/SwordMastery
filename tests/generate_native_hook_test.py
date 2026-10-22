@@ -9,6 +9,7 @@ while depth:
  end+=1
 method=source[start:end]
 Path('tests/NativeHookUnderTest.g.cs').write_text('''// Generated from the production hook; do not edit this copy.
+#nullable enable
 using StardewValley;
 using StardewValley.Tools;
 using StardewModdingAPI;

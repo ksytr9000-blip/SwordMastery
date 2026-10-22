@@ -1,7 +1,7 @@
 {
   "Name": "Sword Mastery",
   "Author": "Prototype",
-  "Version": "0.1.7-patch44.2",
+  "Version": "0.1.7-patch44.3",
   "Description": "A sword mastery progression mod with skill trees, Secret Arts, Ultimates, quests, and custom combat effects.",
   "UniqueID": "Prototype.SwordMastery",
   "EntryDll": "SwordMastery.dll",

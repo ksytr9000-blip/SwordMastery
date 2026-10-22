@@ -4,6 +4,9 @@
     <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Lib.Harmony" Version="2.3.3" />
+    <Compile Include="../src/SwordMastery/Integrations/MonsterKillDelegateFactory.cs" Link="MonsterKillDelegateFactory.cs" />
+    <Compile Include="../src/SwordMastery/Integrations/WalkOfLifeCompatibility.cs" Link="WalkOfLifeCompatibility.cs" />
     <Compile Include="../src/SwordMastery/Services/SkillMotionService.cs" Link="SkillMotionService.cs" />
     <Compile Include="../src/SwordMastery/Models/SaveData.cs" Link="SaveData.cs" />
     <Compile Include="../src/SwordMastery/Models/SkillProgress.cs" Link="SkillProgress.cs" />
