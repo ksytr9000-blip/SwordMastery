@@ -1,0 +1,44 @@
+name: PATCH44 materialize editable source
+on:
+  push:
+    branches: [build/patch44-gmcm-safety]
+    paths:
+      - '.github/workflows/patch44-materialize.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Unpack and apply all cumulative patches
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -q SwordMastery_PATCH_41_FIX01_TOWER_SCALING_PASSIVES_APEX25_SOURCE.zip -d src
+          cd src
+          python3 ../patch42_apply.py
+          python3 ../patch42_fix01.py
+          python3 ../patch43_statue.py
+          python3 ../patch43_fix01.py
+          python3 ../patch43_fix02.py
+          python3 ../patch43_fix03.py
+          python3 ../patch43_fix04.py
+          python3 ../patch43_fix05.py
+          python3 ../patch44_gmcm_safety.py
+      - name: Commit generated source to this branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/SwordMastery
+          if git diff --cached --quiet; then
+            echo 'PATCH44 source already materialized.'
+          else
+            git commit -m "PATCH44: expose fully reconstructed editable C# source"
+            git push origin HEAD:build/patch44-gmcm-safety
+          fi
