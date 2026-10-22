@@ -45,4 +45,6 @@ Check(draft.TryApply(data, out _), "explicit unlock OFF succeeds");
 Check(!data.OhgiAccessGranted && data.SelectedOhgi == null && data.UltimateAccessGranted && data.SelectedUltimate == "A", "OFF only affects requested branch");
 var roundtrip = JsonSerializer.Deserialize<SaveData>(Snapshot(data))!;
 Check(Snapshot(roundtrip) == Snapshot(data), "save serialization roundtrip preserves state");
-Console.WriteLine($"{checks} progression regression checks passed. These are not in-game tests.");
+MotionTests.Run(Check);
+NativeHookTests.Run(Check);
+Console.WriteLine($"{checks} progression/animation regression checks passed. These are not in-game tests.");

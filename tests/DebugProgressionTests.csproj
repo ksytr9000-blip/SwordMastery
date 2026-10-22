@@ -4,6 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../src/SwordMastery/Services/SkillMotionService.cs" Link="SkillMotionService.cs" />
     <Compile Include="../src/SwordMastery/Models/SaveData.cs" Link="SaveData.cs" />
     <Compile Include="../src/SwordMastery/Models/SkillProgress.cs" Link="SkillProgress.cs" />
     <Compile Include="../src/SwordMastery/Services/DebugProgressionDraft.cs" Link="DebugProgressionDraft.cs" />

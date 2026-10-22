@@ -46,6 +46,14 @@ internal sealed class CombatService
     private readonly List<ArcFx> ArcEffects = new();
     private readonly List<LineFx> LineEffects = new();
 
+    private readonly IMonitor monitor;
+    private int stationaryAnimationTicks;
+    private int observedFrame = -1;
+    private int observedAnimationIndex = -1;
+    private GameLocation? observedLocation;
+    private bool movementWarningLogged;
+    private int nativeSwingCount;
+    private int waveCount;
     private int UltimateAuraTick;
     private readonly SkillMotionService skillMotions;
     private readonly Func<ModConfig> currentConfig;
@@ -53,12 +61,54 @@ internal sealed class CombatService
     public CombatService(IMonitor monitor, IModHelper helper,
         Func<bool> posesEnabled, Func<bool> overlayEnabled, Func<ModConfig> getConfig)
     {
+        this.monitor = monitor;
         // overlayEnabled is retained for backwards-compatible GMCM config only.
         skillMotions = new SkillMotionService(posesEnabled);
         currentConfig = getConfig;
     }
 
-    public void ResetMotions() => skillMotions.Reset();
+    public void ResetMotions()
+    {
+        skillMotions.Reset();
+        stationaryAnimationTicks = 0;
+        movementWarningLogged = false;
+        observedLocation = null;
+    }
+
+    public string GetCombatStatus()
+    {
+        Farmer p = Game1.player;
+        MeleeWeapon? weapon = p.CurrentTool as MeleeWeapon;
+        return $"PATCH44 FIX02 combat: tool={p.CurrentTool?.QualifiedItemId ?? "none"}, name={p.CurrentTool?.Name ?? "none"}, "
+            + $"weaponSpeed={weapon?.speed.Value}, speedBuff={p.buffs.WeaponSpeedMultiplier}, "
+            + $"CanMove={p.CanMove}, UsingTool={p.UsingTool}, pause={p.FarmerSprite.PauseForSingleAnimation}, "
+            + $"frame={p.FarmerSprite.CurrentFrame}, animation={p.FarmerSprite.CurrentSingleAnimation}, index={p.FarmerSprite.currentAnimationIndex}, "
+            + $"stamina={p.Stamina}, nativeSwings={nativeSwingCount}, waves={waveCount}, "
+            + $"event={Game1.eventUp}, menu={Game1.activeClickableMenu?.GetType().Name ?? "none"}";
+    }
+
+    private void ObserveSwordAnimation()
+    {
+        Farmer p = Game1.player;
+        int frame = p.FarmerSprite.CurrentFrame;
+        int index = p.FarmerSprite.currentAnimationIndex;
+        bool candidate = !Game1.eventUp && Game1.activeClickableMenu is null
+            && TryGetEquippedSword(out _) && !p.CanMove
+            && (p.UsingTool || p.FarmerSprite.PauseForSingleAnimation);
+        if (!candidate || p.currentLocation != observedLocation || frame != observedFrame || index != observedAnimationIndex)
+        {
+            stationaryAnimationTicks = 0;
+            movementWarningLogged = false;
+        }
+        else if (++stationaryAnimationTicks >= 180 && !movementWarningLogged)
+        {
+            movementWarningLogged = true;
+            monitor.Log("Sword animation has not advanced for 180 update ticks. Diagnostic only; no player state was changed. " + GetCombatStatus(), LogLevel.Warn);
+        }
+        observedLocation = p.currentLocation;
+        observedFrame = frame;
+        observedAnimationIndex = index;
+    }
 
     public IReadOnlyList<CooldownStatus> GetCooldownStatuses(SaveData data)
     {
@@ -228,6 +278,7 @@ internal sealed class CombatService
     /// </summary>
     public void OnVanillaSwordAttack(SaveData data)
     {
+        nativeSwingCount++;
         if (!currentConfig().SwordWaveEnabled)
             return;
         if (!TryGetEquippedSword(out _))
@@ -254,11 +305,13 @@ internal sealed class CombatService
         }
 
         SpawnPassiveSwordWave(progress, stage, data);
+        waveCount++;
     }
 
     public void Update(SaveData data)
     {
         RememberCurrentSword(data);
+        ObserveSwordAnimation();
 
         foreach (string key in Cooldowns.Keys.ToArray())
         {
@@ -1423,6 +1476,11 @@ internal sealed class CombatService
     // Step/Issen retain their movement and combat damage independently.
     private void PlayVanillaSwordSwing(Farmer player)
     {
+        // Native swings/special moves own their completion callbacks. Replacing those
+        // animations can leave UsingTool/CanMove stuck. Skill damage still executes.
+        if (player.UsingTool || !player.CanMove || player.FarmerSprite.PauseForSingleAnimation
+            || Game1.eventUp || Game1.activeClickableMenu is not null)
+            return;
         skillMotions.Reset();
         int firstFrame = player.FacingDirection switch
         {

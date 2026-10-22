@@ -7,6 +7,7 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.GameData.Objects;
 using StardewValley.Monsters;
+using StardewValley.Tools;
 using SwordMastery.Models;
 using SwordMastery.Services;
 using SwordMastery.UI;
@@ -72,6 +73,17 @@ internal sealed class ModEntry : Mod
         );
         LoadCooldownIcons();
         StatueInstance = this;
+        MethodInfo? nativeSwordAttack = AccessTools.Method(typeof(MeleeWeapon), "setFarmerAnimating", new[] { typeof(Farmer) });
+        if (nativeSwordAttack is not null)
+        {
+            new Harmony(ModManifest.UniqueID + ".NativeSwordWave").Patch(
+                nativeSwordAttack,
+                postfix: new HarmonyMethod(typeof(ModEntry), nameof(SwordAttackPostfix)));
+            Monitor.Log("Sword wave connected to native sword swings; raw clicks do not spawn waves.", LogLevel.Info);
+        }
+        else
+            Monitor.Log("Native sword attack hook unavailable; sword waves are disabled to avoid detached attacks.", LogLevel.Error);
+
         OriginalStatueAction = AccessTools.Method(typeof(GameLocation), "performAction", new[] { typeof(string[]), typeof(Farmer), typeof(xTile.Dimensions.Location) });
         if (OriginalStatueAction != null)
         {
@@ -96,6 +108,11 @@ internal sealed class ModEntry : Mod
         helper.Events.Content.AssetRequested += OnAssetRequested;
         helper.Events.World.NpcListChanged += OnNpcListChanged;
 
+        helper.ConsoleCommands.Add("sm_combat_status", "Print attack/animation state without changing it.", (_, _) =>
+        {
+            if (Context.IsWorldReady)
+                Monitor.Log(Combat.GetCombatStatus(), LogLevel.Info);
+        });
         helper.ConsoleCommands.Add("sm_status", "Show Sword Mastery status.", CommandStatus);
         helper.ConsoleCommands.Add("sm_add", "Allocate a point. Usage: sm_add basic A | sm_add ohgi | sm_add ultimate", CommandAdd);
         helper.ConsoleCommands.Add("sm_choose_ohgi", "Choose Ohgi branch A/B/C.", CommandChooseOhgi);
@@ -104,7 +121,19 @@ internal sealed class ModEntry : Mod
         helper.ConsoleCommands.Add("sm_grant_ultimate", "DEBUG: mark Ultimate unlock quest completed.", CommandGrantUltimate);
         helper.ConsoleCommands.Add("sm_reset", "Pay the configured gold cost and schedule respec for next morning.", CommandReset);
 
-        Monitor.Log("Sword Mastery PATCH44 FIX01 loaded (explicit debug edits; XP preserved).", LogLevel.Info);
+        Monitor.Log("Sword Mastery PATCH44 FIX02 loaded (native sword waves; animation ownership guards).", LogLevel.Info);
+    }
+
+    private static void SwordAttackPostfix(MeleeWeapon __instance, Farmer who, bool __runOriginal)
+    {
+        // A click rejected by the game/another mod is not an attack. Never unlock movement here.
+        ModEntry? instance = StatueInstance;
+        if (!__runOriginal || instance is null || !Context.IsWorldReady
+            || !ReferenceEquals(who, Game1.player) || !ReferenceEquals(who.CurrentTool, __instance)
+            || !who.UsingTool || !who.FarmerSprite.PauseForSingleAnimation
+            || Game1.eventUp || Game1.activeClickableMenu is not null)
+            return;
+        instance.Combat.OnVanillaSwordAttack(instance.Data);
     }
 
     private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
@@ -2401,9 +2430,7 @@ internal sealed class ModEntry : Mod
             return;
         }
 
-        // Ohgi B "검기" is passive: normal sword attacks launch the wave.
-        if (e.Button == SButton.MouseLeft || e.Button == SButton.C || e.Button == SButton.ControllerX)
-            Combat.OnVanillaSwordAttack(Data);
+        // Passive sword waves are emitted by SwordAttackPostfix only after a native swing starts.
 
         string? branch = null;
 

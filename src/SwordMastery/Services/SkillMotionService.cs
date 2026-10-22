@@ -21,7 +21,8 @@ internal sealed class SkillMotionService
     public void Play(Farmer farmer, SkillMotion motion, int hitCount = 1)
     {
         if (!enabled() || Game1.eventUp || Game1.activeClickableMenu is not null
-            || farmer.UsingTool || !ReferenceEquals(farmer, Game1.player))
+            || farmer.UsingTool || !farmer.CanMove || farmer.FarmerSprite.PauseForSingleAnimation
+            || !ReferenceEquals(farmer, Game1.player))
             return;
 
         // These are native farmer sprite sheet frames, not animation indices.
