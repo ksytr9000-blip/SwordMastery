@@ -1,9 +1,10 @@
-name: SwordMastery PATCH44 GMCM safe source build
+name: SwordMastery PATCH44 FIX01 debug apply
 on:
   push:
-    branches: [build/patch44-gmcm-safety]
+    branches: [build/patch44-fix01-debug-apply]
     paths:
       - 'src/**'
+      - 'tests/**'
       - '.github/workflows/patch44.yml'
   workflow_dispatch:
 permissions:
@@ -32,6 +33,10 @@ jobs:
         with:
           dotnet_version: 6.0.x
           force_build_with_dotnet_version: true
+      - name: Regression checks for explicit debug changes
+        run: |
+          python3 tests/check_gmcm_contract.py
+          dotnet run --project tests/DebugProgressionTests.csproj -c Release
       - name: Restore and compile
         working-directory: src/SwordMastery
         run: |
@@ -46,16 +51,16 @@ jobs:
           cp src/SwordMastery/manifest.json package/SwordMastery/
           cp -r src/SwordMastery/i18n src/SwordMastery/assets package/SwordMastery/
           cp src/SwordMastery/README_USER.txt package/SwordMastery/ || true
-          (cd package && zip -qr ../SwordMastery_PATCH44_GMCM_SAFETY_TEST_INSTALL.zip SwordMastery)
-          unzip -t SwordMastery_PATCH44_GMCM_SAFETY_TEST_INSTALL.zip
-          (cd src && zip -qr ../SwordMastery_PATCH44_EDITABLE_SOURCE.zip SwordMastery -x 'SwordMastery/bin/*' 'SwordMastery/obj/*')
+          (cd package && zip -qr ../SwordMastery_PATCH44_FIX01_DEBUG_APPLY_INSTALL.zip SwordMastery)
+          unzip -t SwordMastery_PATCH44_FIX01_DEBUG_APPLY_INSTALL.zip
+          (cd src && zip -qr ../SwordMastery_PATCH44_FIX01_EDITABLE_SOURCE.zip SwordMastery -x 'SwordMastery/bin/*' 'SwordMastery/obj/*' 'SwordMastery/*.dll' 'SwordMastery/*.pdb' 'SwordMastery/config.json')
       - uses: actions/upload-artifact@v4
         with:
-          name: SwordMastery_PATCH44_GMCM_SAFETY_TEST_INSTALL
-          path: SwordMastery_PATCH44_GMCM_SAFETY_TEST_INSTALL.zip
+          name: SwordMastery_PATCH44_FIX01_DEBUG_APPLY_INSTALL
+          path: SwordMastery_PATCH44_FIX01_DEBUG_APPLY_INSTALL.zip
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
-          name: SwordMastery_PATCH44_EDITABLE_SOURCE
-          path: SwordMastery_PATCH44_EDITABLE_SOURCE.zip
+          name: SwordMastery_PATCH44_FIX01_EDITABLE_SOURCE
+          path: SwordMastery_PATCH44_FIX01_EDITABLE_SOURCE.zip
           if-no-files-found: error

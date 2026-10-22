@@ -223,8 +223,8 @@
   "reset.statue.yes": "はい",
   "reset.statue.pending": "剣術のリセットは予約済みです。",
   "reset.statue.no-money": "お金が足りません。",
-  "gmcm.debug.apply.explanation": "デバッグ値は一時的な設定です。通常のGMCM保存では成長データは変更されません。変更する場合のみ、下の「デバッグ変更を適用」を明示的に有効化してください。",
-  "gmcm.debug.apply.name": "デバッグ変更を適用（手動）",
-  "gmcm.debug.apply.tip": "レベル、SP、解放状態の変更はこの項目を明示的に有効化した場合に限ります。通常の保存では変わりません。",
+  "gmcm.debug.apply.explanation": "レベル・SP・解放を編集後、適用をOFF→ONにしてください。変更前にバックアップします。通常の設定保存は成長データを変更しません。",
+  "gmcm.debug.apply.name": "デバッグ変更を適用 — OFF→ON",
+  "gmcm.debug.apply.tip": "値を編集し、OFFからONにすると即座に適用されます。保存だけでは適用されません。レベル変更でもEXPとSPは維持します。",
   "gmcm.debug.apply.done": "剣術のデバッグ変更が適用されました。"
 }

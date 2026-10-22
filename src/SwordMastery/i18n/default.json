@@ -223,8 +223,8 @@
   "reset.statue.yes": "Yes",
   "reset.statue.pending": "Sword Mastery reset is already scheduled.",
   "reset.statue.no-money": "Not enough gold.",
-  "gmcm.debug.apply.explanation": "Debug values are drafts. Saving GMCM settings does NOT change your progression. Explicitly enable Apply Debug Changes below to commit the draft values.",
-  "gmcm.debug.apply.name": "Apply Debug Changes (explicit)",
-  "gmcm.debug.apply.tip": "WARNING: applies the drafted level, SP and unlocks to your current character ONLY if you explicitly enable this option. Normal GMCM Save/Reset never changes skills.",
+  "gmcm.debug.apply.explanation": "Edit level, SP or access, then click the Apply option OFF then ON. A backup is created first. Ordinary config saves never change progression.",
+  "gmcm.debug.apply.name": "Apply debug changes — click OFF then ON",
+  "gmcm.debug.apply.tip": "After editing the values, click OFF then ON to apply immediately. Save alone never applies changes. Level changes preserve XP and SP.",
   "gmcm.debug.apply.done": "Sword Mastery debug changes applied."
 }

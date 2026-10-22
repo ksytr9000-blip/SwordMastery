@@ -20,10 +20,8 @@ internal sealed class ModEntry : Mod
 
     // GMCM may invoke setters during ordinary Save/Reset. Never bind those setters
     // directly to permanent progression fields: stage them until explicit Apply.
-    private int? DebugDraftLevel;
-    private int? DebugDraftSkillPoints;
-    private bool? DebugDraftOhgiAccess;
-    private bool? DebugDraftUltimateAccess;
+    private readonly DebugProgressionDraft DebugDraft = new();
+    private IGenericModConfigMenuApi? DebugGmcm;
     private static ModEntry? StatueInstance;
     private static bool PassThroughVanillaStatue;
     private static MethodInfo? OriginalStatueAction;
@@ -88,7 +86,7 @@ internal sealed class ModEntry : Mod
 
         helper.Events.GameLoop.GameLaunched += OnGameLaunched;
         helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
-        helper.Events.GameLoop.ReturnedToTitle += (_, _) => Combat.ResetMotions();
+        helper.Events.GameLoop.ReturnedToTitle += (_, _) => { Combat.ResetMotions(); DebugDraft.Clear(); };
         helper.Events.GameLoop.Saving += OnSaving;
         helper.Events.GameLoop.DayStarted += OnDayStarted;
         helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
@@ -106,7 +104,7 @@ internal sealed class ModEntry : Mod
         helper.ConsoleCommands.Add("sm_grant_ultimate", "DEBUG: mark Ultimate unlock quest completed.", CommandGrantUltimate);
         helper.ConsoleCommands.Add("sm_reset", "Pay the configured gold cost and schedule respec for next morning.", CommandReset);
 
-        Monitor.Log("Sword Mastery prototype loaded.", LogLevel.Info);
+        Monitor.Log("Sword Mastery PATCH44 FIX01 loaded (explicit debug edits; XP preserved).", LogLevel.Info);
     }
 
     private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
@@ -238,7 +236,7 @@ internal sealed class ModEntry : Mod
 
         gmcm.Register(
             mod: ModManifest,
-            reset: () => Config = new ModConfig(),
+            reset: () => { Config = new ModConfig(); DebugDraft.Clear(); },
             save: () => Helper.WriteConfig(Config)
         );
 
@@ -590,8 +588,8 @@ internal sealed class ModEntry : Mod
 
         gmcm.AddNumberOption(
             mod: ModManifest,
-            getValue: () => DebugDraftLevel ?? (Context.IsWorldReady ? Data.SwordLevel : 0),
-            setValue: value => DebugDraftLevel = Math.Clamp(value, 0, Config.MaxSwordLevel),
+            getValue: () => DebugDraft.Level ?? (Context.IsWorldReady ? Data.SwordLevel : 0),
+            setValue: _ => { }, // Save/Reset replay is intentionally read-only for progression.
             name: () => I18n.GetUi("gmcm.debug.level.name"),
             tooltip: () => I18n.GetUi("gmcm.debug.level.tip"),
             min: 0,
@@ -602,8 +600,8 @@ internal sealed class ModEntry : Mod
 
         gmcm.AddNumberOption(
             mod: ModManifest,
-            getValue: () => DebugDraftSkillPoints ?? (Context.IsWorldReady ? Data.UnspentSkillPoints : 0),
-            setValue: value => DebugDraftSkillPoints = Math.Max(0, value),
+            getValue: () => DebugDraft.Points ?? (Context.IsWorldReady ? Data.UnspentSkillPoints : 0),
+            setValue: _ => { }, // Save/Reset replay is intentionally read-only for progression.
             name: () => I18n.GetUi("gmcm.debug.sp.name"),
             tooltip: () => I18n.GetUi("gmcm.debug.sp.tip"),
             min: 0,
@@ -614,8 +612,8 @@ internal sealed class ModEntry : Mod
 
         gmcm.AddBoolOption(
             mod: ModManifest,
-            getValue: () => DebugDraftOhgiAccess ?? (Context.IsWorldReady && Data.OhgiAccessGranted),
-            setValue: value => DebugDraftOhgiAccess = value,
+            getValue: () => DebugDraft.Ohgi ?? (Context.IsWorldReady && Data.OhgiAccessGranted),
+            setValue: _ => { }, // Save/Reset replay is intentionally read-only for progression.
             name: () => I18n.GetUi("gmcm.debug.ohgi.name"),
             tooltip: () => I18n.GetUi("gmcm.debug.ohgi.tip"),
             fieldId: "DebugOhgiAccess"
@@ -623,8 +621,8 @@ internal sealed class ModEntry : Mod
 
         gmcm.AddBoolOption(
             mod: ModManifest,
-            getValue: () => DebugDraftUltimateAccess ?? (Context.IsWorldReady && Data.UltimateAccessGranted),
-            setValue: value => DebugDraftUltimateAccess = value,
+            getValue: () => DebugDraft.Ultimate ?? (Context.IsWorldReady && Data.UltimateAccessGranted),
+            setValue: _ => { }, // Save/Reset replay is intentionally read-only for progression.
             name: () => I18n.GetUi("gmcm.debug.ultimate.name"),
             tooltip: () => I18n.GetUi("gmcm.debug.ultimate.tip"),
             fieldId: "DebugUltimateAccess"
@@ -638,12 +636,7 @@ internal sealed class ModEntry : Mod
         gmcm.AddBoolOption(
             mod: ModManifest,
             getValue: () => false,
-            setValue: value =>
-            {
-                // Only the explicit Apply action touches live progression.
-                if (value)
-                    ApplyStagedDebugChanges();
-            },
+            setValue: _ => { }, // Never execute an action from a cached Save value.
             name: () => I18n.GetUi("gmcm.debug.apply.name"),
             tooltip: () => I18n.GetUi("gmcm.debug.apply.tip"),
             fieldId: "DebugApplyChangesExplicitly"
@@ -763,71 +756,56 @@ internal sealed class ModEntry : Mod
             fieldId: "DebugCompleteUltimateQuest"
         );
 
+        // OnFieldChanged runs for user edits, unlike setValue which runs on Save.
+        DebugGmcm = gmcm;
+        gmcm.OnFieldChanged(ModManifest, OnDebugFieldChanged);
         Monitor.Log("Generic Mod Config Menu integration registered.", LogLevel.Info);
+    }
+
+    private void OnDebugFieldChanged(string field, object value)
+    {
+        if (!Context.IsWorldReady)
+            return;
+        if (field == "DebugApplyChangesExplicitly")
+        {
+            if (value is true)
+                ApplyStagedDebugChanges();
+            return;
+        }
+        DebugDraft.Stage(field, value, Data, Config.MaxSwordLevel);
     }
 
     private void ApplyStagedDebugChanges()
     {
         if (!Context.IsWorldReady)
             return;
-
-        // Check draft values against live data so GMCM re-applying unchanged
-        // values during Save cannot accidentally modify progression.
-        int? level = DebugDraftLevel;
-        int? points = DebugDraftSkillPoints;
-        bool? ohgi = DebugDraftOhgiAccess;
-        bool? ultimate = DebugDraftUltimateAccess;
-
-        // Clear all transient drafts. Next page load reflects real save data.
-        DebugDraftLevel = null;
-        DebugDraftSkillPoints = null;
-        DebugDraftOhgiAccess = null;
-        DebugDraftUltimateAccess = null;
-
-        if (level.HasValue && level.Value != Data.SwordLevel)
-            ApplyDebugSwordLevel(level.Value);
-
-        if (points.HasValue && points.Value != Data.UnspentSkillPoints)
-            Data.UnspentSkillPoints = Math.Max(0, points.Value);
-
-        if (ohgi.HasValue && ohgi.Value != Data.OhgiAccessGranted)
+        if (!DebugDraft.Validate(Data, out string reason))
         {
-            Data.OhgiAccessGranted = ohgi.Value;
-            Data.OhgiQuestAvailable = false;
-            if (!ohgi.Value)
-                Data.SelectedOhgi = null;
-        }
-
-        if (ultimate.HasValue && ultimate.Value != Data.UltimateAccessGranted)
-        {
-            Data.UltimateAccessGranted = ultimate.Value;
-            Data.UltimateQuestAvailable = false;
-            if (!ultimate.Value)
-                Data.SelectedUltimate = null;
-        }
-
-        // Save once only after the user has activated the dedicated debug action.
-        Helper.Data.WriteSaveData(SaveKey, Data);
-        Monitor.Log("Explicit GMCM debug action applied; normal GMCM saves never change progression.", LogLevel.Info);
-        Game1.addHUDMessage(new HUDMessage(I18n.GetUi("gmcm.debug.apply.done")));
-    }
-
-    private void ApplyDebugSwordLevel(int value)
-    {
-        if (!Context.IsWorldReady)
+            DebugDraft.Clear();
+            Monitor.Log(reason, LogLevel.Warn);
             return;
+        }
 
-        int level = Math.Clamp(value, 0, Config.MaxSwordLevel);
-        int spentPoints = Data.Skills.Values.Sum(skill => skill.TotalPoints);
-
-        if (Data.SwordLevel == level)
-            return;  // Preserves the existing EXP when level was not changed.
-
-        Data.SwordLevel = level;
-        Data.SwordExperience = 0;
-        Data.UnspentSkillPoints = Math.Max(0, level - spentPoints);
-
+        // Preserve the entire original state before any explicitly requested mutation.
+        string backupPath = $"data/debug-backups/{Constants.SaveFolderName}/{DateTime.UtcNow:yyyyMMdd-HHmmss-fffffff}.json";
+        try
+        {
+            Helper.Data.WriteJsonFile(backupPath, Data);
+        }
+        catch (Exception ex)
+        {
+            Monitor.Log($"Debug action cancelled: could not create backup: {ex.Message}", LogLevel.Error);
+            return;
+        }
+        if (!DebugDraft.TryApply(Data, out reason))
+        {
+            Monitor.Log(reason, LogLevel.Warn);
+            return;
+        }
         RefreshUnlockState(showMessages: false);
+        Helper.Data.WriteSaveData(SaveKey, Data);
+        Monitor.Log($"PATCH44 FIX01 explicit debug applied: level={Data.SwordLevel}, XP={Data.SwordExperience}, SP={Data.UnspentSkillPoints}. Backup: {backupPath}", LogLevel.Info);
+        Game1.addHUDMessage(new HUDMessage(I18n.GetUi("gmcm.debug.apply.done")));
     }
 
     private void DebugActivateAllSkills()
@@ -2483,10 +2461,7 @@ internal sealed class ModEntry : Mod
     private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
     {
         Combat.ResetMotions();
-        DebugDraftLevel = null;
-        DebugDraftSkillPoints = null;
-        DebugDraftOhgiAccess = null;
-        DebugDraftUltimateAccess = null;
+        DebugDraft.Clear();
         Data = Helper.Data.ReadSaveData<SaveData>(SaveKey) ?? new SaveData();
         Data.EnsureSkillKeys();
 
@@ -2535,6 +2510,11 @@ internal sealed class ModEntry : Mod
             ShowStatueConfirmation();
         }
 
+        // Discard cancelled drafts when leaving our debug page, including title/save switches.
+        if (DebugGmcm is not null
+            && (!DebugGmcm.TryGetCurrentMenu(out IManifest debugMod, out string debugPage)
+                || debugMod?.UniqueID != ModManifest.UniqueID || debugPage != "debug"))
+            DebugDraft.Clear();
         Combat.Update(Data);
         HandleJournalRewardClaims();
 

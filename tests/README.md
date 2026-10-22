@@ -1,0 +1,1 @@
+Run `python3 tests/check_gmcm_contract.py` and `dotnet run --project tests/DebugProgressionTests.csproj -c Release` from the repository root. These exercise the production draft service and verify the GMCM setter contract. They do not simulate the actual GMCM UI, game combat, sleep, or restarting SMAPI.

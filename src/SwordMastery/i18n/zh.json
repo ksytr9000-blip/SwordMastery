@@ -223,8 +223,8 @@
   "reset.statue.yes": "是",
   "reset.statue.pending": "剑术重置已经预约。",
   "reset.statue.no-money": "金币不足。",
-  "gmcm.debug.apply.explanation": "调试数值仅暂存。正常保存GMCM设置不会改变成长数据。只有主动启用下方的“应用调试更改”才会修改。",
-  "gmcm.debug.apply.name": "应用调试更改（手动）",
-  "gmcm.debug.apply.tip": "仅在主动启用此选项时修改剑术等级、技能点和解锁状态。普通保存不会修改。",
+  "gmcm.debug.apply.explanation": "修改等级、SP或解锁后，将应用选项从OFF切换到ON。更改前会备份，普通设置保存不会修改成长数据。",
+  "gmcm.debug.apply.name": "应用调试更改 — 点击 OFF→ON",
+  "gmcm.debug.apply.tip": "修改数值后，从OFF切换到ON即可立即应用。仅保存不会应用。更改等级会保留经验与SP。",
   "gmcm.debug.apply.done": "已应用剑术调试更改。"
 }

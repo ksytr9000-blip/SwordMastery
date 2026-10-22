@@ -223,8 +223,8 @@
   "reset.statue.yes": "예",
   "reset.statue.pending": "이미 검술 초기화가 예약되어 있습니다.",
   "reset.statue.no-money": "골드가 부족합니다.",
-  "gmcm.debug.apply.explanation": "디버그 수치는 임시 입력값입니다. GMCM 설정 저장만으로 성장 데이터가 변경되지 않습니다. 적용하려면 아래 '디버그 변경사항 적용'을 직접 활성화하세요.",
-  "gmcm.debug.apply.name": "디버그 변경사항 적용 (수동)",
-  "gmcm.debug.apply.tip": "주의: 직접 활성화한 경우에만 임시 입력한 레벨, SP, 해금 상태를 실제 캐릭터에 반영합니다. 일반 GMCM 저장/초기화는 성장 데이터를 바꾸지 않습니다.",
+  "gmcm.debug.apply.explanation": "레벨·SP·해금 상태를 입력한 뒤 아래 적용 항목을 OFF→ON으로 클릭하세요. 변경 전 백업을 생성하며 일반 설정 저장은 성장 데이터를 변경하지 않습니다.",
+  "gmcm.debug.apply.name": "디버그 변경사항 적용 — OFF→ON 클릭",
+  "gmcm.debug.apply.tip": "숫자·해금 값을 수정한 뒤 이 항목을 OFF에서 ON으로 클릭하면 즉시 적용됩니다. 저장만으로는 적용되지 않습니다. 다시 적용하려면 OFF→ON으로 클릭하세요. 레벨 변경은 EXP와 SP를 유지합니다.",
   "gmcm.debug.apply.done": "검술 디버그 변경사항이 적용되었습니다."
 }

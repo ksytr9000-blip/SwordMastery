@@ -12,6 +12,8 @@ public interface IGenericModConfigMenuApi
     // strictly out of other mods' settings and GMCM's common navigation.
     bool TryGetCurrentMenu(out IManifest mod, out string page);
 
+    void OnFieldChanged(IManifest mod, Action<string, object> onChange);
+
     void Register(
         IManifest mod,
         Action reset,
