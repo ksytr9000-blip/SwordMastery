@@ -1,0 +1,17 @@
+검술모드 Sword Mastery 패치 30 - 보존/개발판 설명
+
+[실제 원본]
+- SwordMastery_PATCH_30_LANGUAGE_SELECTOR_EN_DEFAULT.zip: 사용자가 2026-10-11 제공한 패치 30 개발 파일 원본.
+- SwordMastery-Nexus-Vortex-0.1.0.zip: 사용자가 제공한 설치/넥서스용 파일 원본(내부에 SwordMastery-0.1.0-Nexus-Vortex.zip 포함).
+- GitHubReady v0.1: 초기 개발 당시 별도 파일 보관함에서 회수한 소스.
+
+[소스 보완본]
+- 실제 패치 30 ZIP의 내용은 변경하지 않고 새 작업용 보완본을 생성했다.
+- 패치30 원본에 없는 세 파일은 초기 원본에서 보충: SwordMastery.csproj, Services/ProgressionService.cs, Models/SkillProgress.cs
+- assets/skills.json은 넥서스 배포파일 내부의 원본 파일에서 보충했다.
+- 기타 C#, i18n, 아이콘, 문서는 패치 30 원본과 바이트 단위로 동일하게 보존했다.
+- 같은 파일명으로 존재하는 넥서스 배포 리소스 13개는 패치 30과 내용이 완전히 같다.
+- Nexus DLL이 패치 30 소스와 컴파일 단계까지 동일한지는 독립적으로 검증되지 않았다.
+- 현재 컨테이너에 dotnet SDK가 없어 컴파일 및 게임 실행 검증은 수행하지 못했다.
+- PATCH 31 존재 여부는 확인하지 않았다.
+- 후속 개발은 FULL_SOURCE 파일에서 수행하되 실제 원본 아카이브는 수정하지 않는다.
