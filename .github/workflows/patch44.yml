@@ -12,7 +12,9 @@ permissions:
   contents: read
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Legacy Harmony/MonoMod helpers require the pre-glibc-2.41 loader behavior.
+    # Pin the supported runner instead of changing or skipping native hook tests.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Validate directly editable cumulative source
