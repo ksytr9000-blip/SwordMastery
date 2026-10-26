@@ -85,16 +85,21 @@ jobs:
           PY
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 1
+          compression-level: 0
           name: SwordMastery_0.1.8_INSTALL
           path: SwordMastery_0.1.8_INSTALL.zip
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 1
+          compression-level: 0
           name: SwordMastery_0.1.8_SOURCE
           path: SwordMastery_0.1.8_SOURCE.zip
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
+          retention-days: 1
           name: SwordMastery_0.1.8_RELEASE_NOTES
           path: |
             docs/release-0.1.8/

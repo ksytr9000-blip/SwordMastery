@@ -36,6 +36,8 @@ jobs:
       - name: Upload installable ZIP
         uses: actions/upload-artifact@v4
         with:
+          retention-days: 1
+          compression-level: 0
           name: SwordMastery_PATCH41_FIX01_APEX25_INSTALL
           path: SwordMastery_PATCH41_FIX01_APEX25_INSTALL.zip
           if-no-files-found: error
