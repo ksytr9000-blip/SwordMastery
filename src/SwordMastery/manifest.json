@@ -1,12 +1,19 @@
 {
   "Name": "Sword Mastery",
   "Author": "Prototype",
-  "Version": "0.1.8",
+  "Version": "0.1.9-alpha.1",
   "Description": "A sword mastery progression mod with skill trees, Secret Arts, Ultimates, quests, and custom combat effects.",
   "UniqueID": "Prototype.SwordMastery",
   "EntryDll": "SwordMastery.dll",
   "MinimumApiVersion": "4.3.0",
   "UpdateKeys": [
     "Nexus:53641"
+  ],
+  "Dependencies": [
+    {
+      "UniqueID": "ValleyCoward.TrialTower",
+      "MinimumVersion": "0.1.0-alpha.53",
+      "IsRequired": false
+    }
   ]
 }
