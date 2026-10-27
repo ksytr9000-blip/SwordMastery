@@ -17,7 +17,11 @@ internal static class WolCompatibilityTests
     private sealed class Monitor : IMonitor
     {
         public List<string> Messages = new();
-        public void Log(string message, LogLevel level) => Messages.Add(message);
+        public void Log(string message, LogLevel level)
+        {
+            Messages.Add(message);
+            if(level==LogLevel.Error)Console.Error.WriteLine(message);
+        }
     }
     private sealed class ThreeArgumentLocation
     {

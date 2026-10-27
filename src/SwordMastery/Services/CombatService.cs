@@ -48,6 +48,12 @@ internal sealed class CombatService
     private readonly List<LineFx> LineEffects = new();
 
     private readonly IMonitor monitor;
+    private readonly TrialTowerCombat towerCombat;
+    private TrialTowerCombat.Attack? towerAttack;
+    private sealed class RestoreAttack : IDisposable
+    {private Action? restore;internal RestoreAttack(Action action){restore=action;}public void Dispose(){var action=restore;restore=null;action?.Invoke();}}
+    private IDisposable UseTowerAttack(TrialTowerCombat.Attack? attack)
+    {var prior=towerAttack;towerAttack=attack;return new RestoreAttack(()=>towerAttack=prior);}
     private int stationaryAnimationTicks;
     private int observedFrame = -1;
     private int observedAnimationIndex = -1;
@@ -63,6 +69,7 @@ internal sealed class CombatService
         Func<bool> posesEnabled, Func<bool> overlayEnabled, Func<ModConfig> getConfig)
     {
         this.monitor = monitor;
+        towerCombat=new(helper,monitor,item=>ReferenceEquals(Game1.player.CurrentTool,item)&&TryGetEquippedSword(out _));
         // overlayEnabled is retained for backwards-compatible GMCM config only.
         skillMotions = new SkillMotionService(posesEnabled);
         currentConfig = getConfig;
@@ -144,6 +151,7 @@ internal sealed class CombatService
 
     public bool TryUseBasicSkill(string branch, SaveData data, out string message)
     {
+        towerAttack=null;
         if (RollAttackCompatibility.IsRolling(Game1.player))
         {
             message = "";
@@ -191,6 +199,7 @@ internal sealed class CombatService
 
     public bool TryUseOhgi(SaveData data, out string message)
     {
+        towerAttack=null;
         if (RollAttackCompatibility.IsRolling(Game1.player))
         {
             message = "";
@@ -243,6 +252,7 @@ internal sealed class CombatService
 
     public bool TryUseUltimate(SaveData data, out string message)
     {
+        towerAttack=null;
         if (RollAttackCompatibility.IsRolling(Game1.player))
         {
             message = "";
@@ -598,6 +608,7 @@ internal sealed class CombatService
 
             Projectiles.Add(new SwordWave
             {
+                TowerAttack=towerAttack,
                 Location = location,
                 Position = origin,
                 Direction = direction,
@@ -822,6 +833,7 @@ internal sealed class CombatService
 
         Projectiles.Add(new SwordWave
         {
+            TowerAttack=towerAttack,
             IsPassiveSwordWave = true,
             Location = Game1.currentLocation,
             Position = origin,
@@ -920,6 +932,7 @@ internal sealed class CombatService
 
     private void UpdateUltimateAura(SaveData data)
     {
+        using var attackScope=UseTowerAttack(null);
         if (!currentConfig().SwordsmanshipApexEnabled)
         {
             UltimateAuraTick = 0;
@@ -961,7 +974,7 @@ internal sealed class CombatService
         // Tower reinforcement raises weapon min/max damage, which now also
         // raises the Apex damage while its original low-weapon floor remains.
         int weaponDamage = TryGetEquippedSword(out _)
-            ? Math.Max(InfinityBladeReferenceDamage, GetWeaponReferenceDamage(data))
+            ? Math.Max(InfinityBladeReferenceDamage, GetWeaponReferenceDamage(data,false))
             : InfinityBladeReferenceDamage;
         float damageMultiplier = stage switch
         {
@@ -1192,6 +1205,7 @@ internal sealed class CombatService
         for (int i = PendingHits.Count - 1; i >= 0; i--)
         {
             PendingHit hit = PendingHits[i];
+            using var attackScope=UseTowerAttack(hit.TowerAttack);
 
             if (Game1.currentLocation != hit.Location)
             {
@@ -1222,6 +1236,7 @@ internal sealed class CombatService
         for (int i = Projectiles.Count - 1; i >= 0; i--)
         {
             SwordWave wave = Projectiles[i];
+            using var attackScope=UseTowerAttack(wave.TowerAttack);
 
             // Turning the passive off removes already travelling *passive* waves;
             // Basic B's active sword-wave projectile stays unaffected.
@@ -1401,6 +1416,7 @@ internal sealed class CombatService
             PendingHits.Add(new PendingHit
             {
                 Location = location,
+                TowerAttack=towerAttack,
                 Area = area,
                 Damage = damage,
                 Knockback = knockback,
@@ -1434,10 +1450,11 @@ internal sealed class CombatService
         data.LastSwordReferenceDamage = Math.Max(1, (min + max) / 2);
     }
 
-    private static int GetWeaponReferenceDamage(SaveData data)
+    private int GetWeaponReferenceDamage(SaveData data,bool captureAttack=true)
     {
         if (TryGetEquippedSword(out MeleeWeapon? weapon) && weapon is not null)
         {
+            towerAttack=captureAttack?towerCombat.Begin(weapon):null;
             int min = Math.Max(1, weapon.minDamage.Value);
             int max = Math.Max(min, weapon.maxDamage.Value);
             int average = Math.Max(1, (min + max) / 2);
@@ -1445,6 +1462,7 @@ internal sealed class CombatService
             return average;
         }
 
+        towerAttack=null;
         return Math.Max(1, data.LastSwordReferenceDamage);
     }
 
@@ -1954,13 +1972,20 @@ internal sealed class CombatService
         );
     }
 
-    private static void DamageArea(
+    private void DamageArea(
         GameLocation location,
         Rectangle area,
         int damage,
         float knockback
     )
     {
+        if(towerAttack is not null)
+        {
+            foreach(var monster in location.characters.OfType<Monster>().ToArray())
+                if(monster.Health>0&&area.Intersects(monster.GetBoundingBox()))
+                    towerCombat.Hit(towerAttack,monster,damage,false,1,value=>location.damageMonster(area,value,value,false,knockback,0,0f,1f,false,Game1.player,true));
+            return;
+        }
         location.damageMonster(
             area,
             damage,
@@ -2118,7 +2143,7 @@ internal sealed class CombatService
         return false;
     }
 
-    private static bool DamageSingleMonsterIgnoringTerrain(
+    private bool DamageSingleMonsterIgnoringTerrain(
         GameLocation location,
         Monster monster,
         int damage,
@@ -2140,6 +2165,9 @@ internal sealed class CombatService
             // rocks / ore / placed solid objects while keeping vanilla kill/loot logic.
             monster.ignoreDamageLOS.Value = true;
 
+            var towerResult=towerCombat.Hit(towerAttack,monster,damage,guaranteedCritical,critMultiplier,
+                value=>location.damageMonster(monsterBox,value,value,false,knockback,0,0f,1f,false,Game1.player,true));
+            if(towerResult.HasValue)return towerResult.Value;
             return location.damageMonster(
                 monsterBox,
                 damage,
@@ -2159,7 +2187,7 @@ internal sealed class CombatService
         }
     }
 
-    private static void DamageMonstersIgnoringTerrain(
+    private void DamageMonstersIgnoringTerrain(
         GameLocation location,
         Rectangle area,
         int damage,
@@ -2183,7 +2211,7 @@ internal sealed class CombatService
         }
     }
 
-    private static bool DamageAreaForcedCritical(
+    private bool DamageAreaForcedCritical(
         GameLocation location,
         Rectangle area,
         int damage,
@@ -2800,6 +2828,7 @@ internal sealed class CombatService
 
     private sealed class PendingHit
     {
+        public TrialTowerCombat.Attack? TowerAttack {get;set;}
         public GameLocation Location { get; set; } = null!;
         public Rectangle Area { get; set; }
         public int Damage { get; set; }
@@ -2815,6 +2844,7 @@ internal sealed class CombatService
 
     private sealed class SwordWave
     {
+        public TrialTowerCombat.Attack? TowerAttack {get;set;}
         public bool IsPassiveSwordWave { get; set; }
         public GameLocation Location { get; set; } = null!;
         public Vector2 Position { get; set; }

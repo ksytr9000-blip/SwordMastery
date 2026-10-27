@@ -2,10 +2,12 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType><TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+    <HarmonyTestVersion Condition="'$(HarmonyTestVersion)' == ''">2.3.3</HarmonyTestVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="TowerContracts/**/*.cs" />
     <Compile Include="../src/SwordMastery/Integrations/RollAttackCompatibility.cs" Link="RollAttackCompatibility.cs" />
-    <PackageReference Include="Lib.Harmony" Version="2.3.3" />
+    <PackageReference Include="Lib.Harmony" Version="$(HarmonyTestVersion)" />
     <Compile Include="../src/SwordMastery/Integrations/MonsterKillDelegateFactory.cs" Link="MonsterKillDelegateFactory.cs" />
     <Compile Include="../src/SwordMastery/Integrations/WalkOfLifeCompatibility.cs" Link="WalkOfLifeCompatibility.cs" />
     <Compile Include="../src/SwordMastery/Services/SkillMotionService.cs" Link="SkillMotionService.cs" />
