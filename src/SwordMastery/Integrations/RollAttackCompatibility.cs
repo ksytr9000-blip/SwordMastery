@@ -23,9 +23,11 @@ internal static class RollAttackCompatibility
 
     public static void Install(IModHelper helper, IMonitor monitor, string owner)
     {
+        if (helper.ModRegistry.Get(GunId) is null) return;
         if (installed) return;
         installed = true;
-        // Initialise only when all optional mods have registered their GetApi implementations.
+        // Legacy state is available immediately; refresh with preferred API at GameLaunched.
+        ConfigureProvider(helper, monitor);
         helper.Events.GameLoop.GameLaunched += (_, _) => ConfigureProvider(helper, monitor);
 
         var harmony = new Harmony(owner + ".RollAttackGuard");
