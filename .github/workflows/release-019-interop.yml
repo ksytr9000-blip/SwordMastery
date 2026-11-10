@@ -1,0 +1,67 @@
+name: Sword Mastery v0.1.9 installer
+on:
+  push:
+    branches: [build/0.1.9-native-roll-mobile-controller]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sword-v019-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Pathoschild/SMAPI-ModBuildWorkflow/add-build-environment@v1
+        with:
+          dotnet_version: 6.0.x
+          force_build_with_dotnet_version: true
+      - name: Check source and public interop contract
+        run: |
+          set -euo pipefail
+          python3 tests/check_gmcm_contract.py
+          python3 tests/check_sword_contract.py
+          python3 tests/generate_native_hook_test.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path('src/SwordMastery')
+          assert json.loads((p/'manifest.json').read_text())['Version']=='0.1.9'
+          s=(p/'Integrations/RollAttackCompatibility.cs').read_text()
+          assert 'GetApi<INativeRollCompatibilityApi>' in s and 'RollSkill.IsRolling' in s
+          assert 'ValleyCoward.ModInterop.NativeRoll/v1' in s
+          PY
+      - name: Build and run existing regression suite
+        run: |
+          set -euo pipefail
+          dotnet build src/SwordMastery/SwordMastery.csproj -c Release --nologo
+          dotnet run --project tests/DebugProgressionTests.csproj -c Release
+      - name: Package player-only installer
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile,json
+          src=Path('src/SwordMastery')
+          dll=src/'bin/Release/net6.0/SwordMastery.dll'
+          assert dll.is_file() and dll.read_bytes().startswith(b'MZ')
+          target=Path('SwordMastery-v0.1.9.zip')
+          with zipfile.ZipFile(target,'w',zipfile.ZIP_DEFLATED) as z:
+              z.write(dll,'SwordMastery/SwordMastery.dll')
+              z.write(src/'manifest.json','SwordMastery/manifest.json')
+              for folder in ('assets','i18n'):
+                  for p in sorted((src/folder).rglob('*')):
+                      if p.is_file():z.write(p,'SwordMastery/'+p.relative_to(src).as_posix())
+          with zipfile.ZipFile(target) as z:
+              assert z.testzip() is None
+              assert json.loads(z.read('SwordMastery/manifest.json'))['Version']=='0.1.9'
+              assert not any(x.endswith(('.cs','.csproj','.md','.txt','.log')) for x in z.namelist())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SwordMastery-v0.1.9-Nexus-Install
+          path: SwordMastery-v0.1.9.zip
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
