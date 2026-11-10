@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
@@ -22,6 +23,17 @@ internal sealed class SkillTreeMenu : IClickableMenu
     private string? HoveredSkillId;
     private int HoverX;
     private int HoverY;
+    private int CompactPage;
+    private int ControllerSelection;
+    private bool CompactMode => height < 760 || width < 650;
+    private static readonly string[][] Pages =
+    {
+        new[] { "BasicA", "BasicB", "BasicC" },
+        new[] { "OhgiA", "OhgiB", "OhgiC" },
+        new[] { "UltimateA", "UltimateB" }
+    };
+    private Rectangle PrevPageButton => new(xPositionOnScreen + 18, yPositionOnScreen + 148, 54, 44);
+    private Rectangle NextPageButton => new(xPositionOnScreen + width - 72, yPositionOnScreen + 148, 54, 44);
 
     private readonly Dictionary<string, string> SkillNames = new()
     {
@@ -126,31 +138,77 @@ internal sealed class SkillTreeMenu : IClickableMenu
     private void BuildSkillAreas()
     {
         SkillAreas.Clear();
-
         int tile = GetTileSize();
+        if (CompactMode)
+        {
+            string[] ids = Pages[CompactPage];
+            int[] columns = ids.Length == 3 ? ThreeColumns(tile) : TwoColumns(tile);
+            for (int n = 0; n < ids.Length; n++)
+                AddSkillArea(ids[n], columns[n], yPositionOnScreen + 224, tile);
+            return;
+        }
 
         int basicLabelY = yPositionOnScreen + 155;
         int basicY = basicLabelY + 62;
-
         int ohgiLabelY = basicY + tile + 116;
         int ohgiY = ohgiLabelY + 62;
-
         int ultimateLabelY = ohgiY + tile + 116;
         int ultimateY = ultimateLabelY + 62;
+        int[] basics = ThreeColumns(tile);
+        AddSkillArea("BasicA", basics[0], basicY, tile);
+        AddSkillArea("BasicB", basics[1], basicY, tile);
+        AddSkillArea("BasicC", basics[2], basicY, tile);
+        int[] ohgis = ThreeColumns(tile);
+        AddSkillArea("OhgiA", ohgis[0], ohgiY, tile);
+        AddSkillArea("OhgiB", ohgis[1], ohgiY, tile);
+        AddSkillArea("OhgiC", ohgis[2], ohgiY, tile);
+        int[] ultimate = TwoColumns(tile);
+        AddSkillArea("UltimateA", ultimate[0], ultimateY, tile);
+        AddSkillArea("UltimateB", ultimate[1], ultimateY, tile);
+    }
 
-        int[] basicXs = ThreeColumns(tile);
-        AddSkillArea("BasicA", basicXs[0], basicY, tile);
-        AddSkillArea("BasicB", basicXs[1], basicY, tile);
-        AddSkillArea("BasicC", basicXs[2], basicY, tile);
+    private void ChangePage(int step)
+    {
+        CompactPage = (CompactPage + step + Pages.Length) % Pages.Length;
+        ControllerSelection = 0;
+        HoveredSkillId = null;
+        BuildSkillAreas();
+    }
 
-        int[] ohgiXs = ThreeColumns(tile);
-        AddSkillArea("OhgiA", ohgiXs[0], ohgiY, tile);
-        AddSkillArea("OhgiB", ohgiXs[1], ohgiY, tile);
-        AddSkillArea("OhgiC", ohgiXs[2], ohgiY, tile);
-
-        int[] ultimateXs = TwoColumns(tile);
-        AddSkillArea("UltimateA", ultimateXs[0], ultimateY, tile);
-        AddSkillArea("UltimateB", ultimateXs[1], ultimateY, tile);
+    public override bool areGamePadControlsImplemented() => true;
+    public override void receiveGamePadButton(Buttons button)
+    {
+        if (button == Buttons.B)
+        {
+            Game1.exitActiveMenu();
+            return;
+        }
+        if (CompactMode && (button == Buttons.LeftShoulder || button == Buttons.RightShoulder))
+        {
+            ChangePage(button == Buttons.LeftShoulder ? -1 : 1);
+            return;
+        }
+        string[] visible = CompactMode ? Pages[CompactPage] :
+            Pages.SelectMany(p => p).ToArray();
+        if (button == Buttons.DPadRight || button == Buttons.DPadDown ||
+            button == Buttons.LeftThumbstickRight || button == Buttons.LeftThumbstickDown)
+            ControllerSelection = (ControllerSelection + 1) % visible.Length;
+        else if (button == Buttons.DPadLeft || button == Buttons.DPadUp ||
+                 button == Buttons.LeftThumbstickLeft || button == Buttons.LeftThumbstickUp)
+            ControllerSelection = (ControllerSelection + visible.Length - 1) % visible.Length;
+        else if (button == Buttons.A)
+        {
+            if (SkillAreas.TryGetValue(visible[ControllerSelection], out var selected))
+                receiveLeftClick(selected.bounds.Center.X, selected.bounds.Center.Y);
+            return;
+        }
+        else { base.receiveGamePadButton(button); return; }
+        HoveredSkillId = visible[ControllerSelection];
+        if (SkillAreas.TryGetValue(HoveredSkillId, out var target))
+        {
+            HoverX = target.bounds.Center.X;
+            HoverY = target.bounds.Center.Y;
+        }
     }
 
     private void AddSkillArea(string id, int x, int y, int tile)
@@ -163,6 +221,9 @@ internal sealed class SkillTreeMenu : IClickableMenu
 
     private int GetTileSize()
     {
+        if (CompactMode)
+            return Math.Max(52, Math.Min(76, (width - 96) / 3));
+
         if (height < 820)
             return 88;
 
@@ -174,7 +235,8 @@ internal sealed class SkillTreeMenu : IClickableMenu
 
     private int[] ThreeColumns(int tile)
     {
-        int gap = Math.Max(55, (width - (tile * 3) - 240) / 2);
+        int gap = CompactMode ? Math.Max(12, (width - tile * 3 - 72) / 2)
+            : Math.Max(55, (width - (tile * 3) - 240) / 2);
         int total = tile * 3 + gap * 2;
         int start = xPositionOnScreen + (width - total) / 2;
 
@@ -188,7 +250,7 @@ internal sealed class SkillTreeMenu : IClickableMenu
 
     private int[] TwoColumns(int tile)
     {
-        int gap = Math.Max(150, width / 4);
+        int gap = CompactMode ? Math.Max(28, width / 5) : Math.Max(150, width / 4);
         int total = tile * 2 + gap;
         int start = xPositionOnScreen + (width - total) / 2;
 
@@ -223,6 +285,9 @@ internal sealed class SkillTreeMenu : IClickableMenu
 
         if (upperRightCloseButton?.containsPoint(x, y) == true)
             return;
+
+        if (CompactMode && PrevPageButton.Contains(x, y)) { ChangePage(-1); return; }
+        if (CompactMode && NextPageButton.Contains(x, y)) { ChangePage(1); return; }
 
         foreach (var pair in SkillAreas)
         {
@@ -336,28 +401,35 @@ internal sealed class SkillTreeMenu : IClickableMenu
         DrawHeader(b);
         int tile = GetTileSize();
 
-        int basicLabelY = yPositionOnScreen + 155;
-        int basicY = basicLabelY + 62;
-
-        int ohgiLabelY = basicY + tile + 116;
-        int ohgiY = ohgiLabelY + 62;
-
-        int ultimateLabelY = ohgiY + tile + 116;
-
-        DrawSectionLabel(b, I18n.GetUi("ui.section.basic"), basicLabelY);
-        DrawSectionLabel(b, I18n.GetUi("ui.section.ohgi"), ohgiLabelY);
-        DrawSectionLabel(b, I18n.GetUi("ui.section.ultimate"), ultimateLabelY);
-
-        DrawSkill(b, "BasicA", "basic");
-        DrawSkill(b, "BasicB", "basic");
-        DrawSkill(b, "BasicC", "basic");
-
-        DrawSkill(b, "OhgiA", "ohgi");
-        DrawSkill(b, "OhgiB", "ohgi");
-        DrawSkill(b, "OhgiC", "ohgi");
-
-        DrawSkill(b, "UltimateA", "ultimate");
-        DrawSkill(b, "UltimateB", "ultimate");
+        if (CompactMode)
+        {
+            string key = CompactPage switch
+            {
+                0 => "ui.section.basic",
+                1 => "ui.section.ohgi",
+                _ => "ui.section.ultimate"
+            };
+            DrawSectionLabel(b, I18n.GetUi(key), yPositionOnScreen + 148);
+            b.Draw(Game1.staminaRect, PrevPageButton, new Color(70, 61, 48) * .35f);
+            b.Draw(Game1.staminaRect, NextPageButton, new Color(70, 61, 48) * .35f);
+            Utility.drawTextWithShadow(b, "<", I18n.SmallFont,
+                new Vector2(PrevPageButton.X + 18, PrevPageButton.Y + 8), Game1.textColor);
+            Utility.drawTextWithShadow(b, ">", I18n.SmallFont,
+                new Vector2(NextPageButton.X + 18, NextPageButton.Y + 8), Game1.textColor);
+        }
+        else
+        {
+            int basicLabelY = yPositionOnScreen + 155;
+            int basicY = basicLabelY + 62;
+            int ohgiLabelY = basicY + tile + 116;
+            int ohgiY = ohgiLabelY + 62;
+            int ultimateLabelY = ohgiY + tile + 116;
+            DrawSectionLabel(b, I18n.GetUi("ui.section.basic"), basicLabelY);
+            DrawSectionLabel(b, I18n.GetUi("ui.section.ohgi"), ohgiLabelY);
+            DrawSectionLabel(b, I18n.GetUi("ui.section.ultimate"), ultimateLabelY);
+        }
+        foreach (string id in SkillAreas.Keys)
+            DrawSkill(b, id, id.StartsWith("Basic") ? "basic" : id.StartsWith("Ohgi") ? "ohgi" : "ultimate");
 
         if (!string.IsNullOrEmpty(HoveredSkillId))
             DrawTooltip(b, HoveredSkillId!);
@@ -459,7 +531,7 @@ internal sealed class SkillTreeMenu : IClickableMenu
     private void DrawSectionLabel(SpriteBatch b, string text, int y)
     {
         Vector2 size = I18n.SmallFont.MeasureString(text);
-        int w = Math.Max(300, (int)size.X + 150);
+        int w = Math.Min(width - 36, Math.Max(180, (int)size.X + (CompactMode ? 55 : 150)));
         int h = 52;
         int x = xPositionOnScreen + (width - w) / 2;
 
@@ -553,8 +625,9 @@ internal sealed class SkillTreeMenu : IClickableMenu
         SkillProgress p = Data.Skills[id];
 
         DrawPipRow(b, "I", p.Stage1, centerX, y, locked);
-        DrawPipRow(b, "II", p.Stage2, centerX, y + 34, locked);
-        DrawPipRow(b, "III", p.Stage3, centerX, y + 68, locked);
+        int gap = CompactMode ? 21 : 34;
+        DrawPipRow(b, "II", p.Stage2, centerX, y + gap, locked);
+        DrawPipRow(b, "III", p.Stage3, centerX, y + gap * 2, locked);
     }
 
     private void DrawPipRow(SpriteBatch b, string roman, int filled, int centerX, int y, bool locked)
