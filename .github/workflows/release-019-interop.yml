@@ -29,7 +29,7 @@ jobs:
           p=Path('src/SwordMastery')
           assert json.loads((p/'manifest.json').read_text())['Version']=='0.1.9'
           s=(p/'Integrations/RollAttackCompatibility.cs').read_text()
-          assert 'GetApi<INativeRollCompatibilityApi>' in s and 'RollSkill.IsRolling' in s
+          assert 'GetApi<INativeRollCompatibilityApi>' in s and 'GetMethod("IsRolling"' in s
           assert 'ValleyCoward.ModInterop.NativeRoll/v1' in s
           PY
       - name: Build and run existing regression suite
