@@ -14,10 +14,29 @@ namespace StardewValley.Monsters
 }
 namespace StardewModdingAPI
 {
-    public enum LogLevel { Info, Warn, Error }
+    public enum LogLevel { Info, Warn, Error, Trace }
     public interface IMonitor { void Log(string message, LogLevel level); }
-    public interface IModHelper { IModRegistry ModRegistry { get; } }
-    public interface IModRegistry { IModInfo? Get(string id); }
+    public interface IGameLoopEvents { event EventHandler<EventArgs>? GameLaunched; }
+    public sealed class TestGameLoopEvents : IGameLoopEvents
+    {
+        public event EventHandler<EventArgs>? GameLaunched;
+        public void Launch() => GameLaunched?.Invoke(this, EventArgs.Empty);
+    }
+    public interface IModEvents { IGameLoopEvents GameLoop { get; } }
+    public sealed class TestModEvents : IModEvents
+    {
+        public IGameLoopEvents GameLoop { get; } = new TestGameLoopEvents();
+    }
+    public interface IModHelper
+    {
+        IModRegistry ModRegistry { get; }
+        IModEvents Events => new TestModEvents();
+    }
+    public interface IModRegistry
+    {
+        IModInfo? Get(string id);
+        T? GetApi<T>(string id) where T : class => null;
+    }
     public interface IModInfo { IManifest Manifest { get; } }
     public interface IManifest { string Version { get; } }
 }
